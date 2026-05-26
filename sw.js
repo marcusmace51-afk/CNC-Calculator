@@ -1,7 +1,7 @@
 /* CNC Calculator — Service Worker
    v7 — bulletproof offline + diagnostic message endpoint */
 
-var VERSION = 'v10';
+var VERSION = 'v12';
 var CACHE = 'cnc-calc-' + VERSION;
 
 var CRITICAL = [
@@ -87,6 +87,11 @@ self.addEventListener('message', function(e) {
 self.addEventListener('fetch', function(e) {
   if (e.request.method !== 'GET') return;
   var url = new URL(e.request.url);
+  /* AI chat: cross-origin POSTs to the worker — never intercepted (different
+     origin + non-GET). But future cross-origin GETs to api.* must not be
+     cached either, since responses are user-specific. */
+  if (url.hostname.indexOf('.workers.dev') >= 0) return;
+  if (url.pathname.indexOf('/api/') === 0) return;
   if (url.origin !== self.location.origin) return;
 
   /* Cache-first for everything; update in background; offline fallback for navigations. */
@@ -110,7 +115,7 @@ self.addEventListener('fetch', function(e) {
 
     /* Offline + no cache: navigation → app shell or offline.html */
     if (e.request.mode === 'navigate') {
-      var shell = await c.match('./index.html') || await c.match('./');
+      var shell = await c.match('./index.html');
       if (shell) return shell;
       var off = await c.match('./offline.html');
       if (off) return off;

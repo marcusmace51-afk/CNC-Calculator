@@ -14486,6 +14486,483 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
 </script>
 
 
+
+  <!-- ════════════════════════════════════════════════════════════════
+       AI CHAT — Floating Action Button + slide-up drawer.
+       Backend: a Cloudflare Worker that proxies to Claude/OpenAI.
+       Configure CHAT_API_URL below to point at your deployed worker.
+       MVP: no auth, no subscription gate yet (Phase 1B will add those).
+       ════════════════════════════════════════════════════════════════ -->
+
+  <style>
+    /* --- FAB --- */
+    #ai-fab {
+      position: fixed;
+      right: max(20px, env(safe-area-inset-right, 20px));
+      bottom: max(80px, calc(env(safe-area-inset-bottom, 0px) + 80px));
+      width: 56px; height: 56px;
+      border-radius: 28px;
+      background: var(--accent, #c8a84b);
+      color: #0f0f0d;
+      border: none;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4), 0 2px 6px rgba(200,168,75,0.3);
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 9000;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #ai-fab:active { transform: scale(0.94); }
+    #ai-fab svg { width: 26px; height: 26px; }
+
+    /* --- Drawer --- */
+    #ai-drawer {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      height: 65vh; max-height: 700px;
+      background: var(--surface, #181816);
+      border-top: 1px solid var(--accent-dim, #7a6428);
+      border-radius: 14px 14px 0 0;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.6);
+      z-index: 9500;
+      display: flex; flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    #ai-drawer.open { transform: translateY(0); }
+
+    #ai-drawer .ai-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-bottom: 1px solid var(--border, #2e2e2a);
+      flex-shrink: 0;
+    }
+    #ai-drawer .ai-title {
+      font-family: var(--mono, ui-monospace, monospace);
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent, #c8a84b);
+    }
+    #ai-drawer .ai-close {
+      width: 36px; height: 36px; border: none; background: transparent;
+      color: var(--muted, #9b9690); font-size: 22px; line-height: 1;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+
+    #ai-drawer .ai-messages {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px;
+      font-family: var(--sans, system-ui, sans-serif);
+      font-size: 14px; line-height: 1.5;
+      color: var(--text, #e2ddd4);
+    }
+    #ai-drawer .ai-msg {
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      max-width: 92%;
+    }
+    #ai-drawer .ai-msg.user {
+      background: rgba(200,168,75,0.10);
+      border: 1px solid var(--accent-dim, #7a6428);
+      margin-left: auto;
+    }
+    #ai-drawer .ai-msg.assistant {
+      background: var(--panel, #1f1f1c);
+      border: 1px solid var(--border, #2e2e2a);
+    }
+    #ai-drawer .ai-msg.assistant.thinking::after {
+      content: ' …';
+      color: var(--accent-dim, #7a6428);
+    }
+    #ai-drawer .ai-msg code {
+      font-family: var(--mono, ui-monospace, monospace);
+      background: rgba(0,0,0,0.3); padding: 1px 5px; border-radius: 3px;
+      font-size: 12.5px;
+    }
+    #ai-drawer .ai-msg pre {
+      background: rgba(0,0,0,0.4); padding: 10px; border-radius: 4px;
+      overflow-x: auto; font-size: 12px; margin: 8px 0;
+    }
+    #ai-drawer .ai-msg ul, #ai-drawer .ai-msg ol {
+      margin: 4px 0 4px 18px;
+    }
+    #ai-drawer .ai-msg strong { color: var(--accent, #c8a84b); }
+
+    #ai-drawer .ai-empty {
+      color: var(--muted, #9b9690);
+      font-size: 13px; line-height: 1.55;
+      padding: 20px 4px;
+      text-align: center;
+    }
+    #ai-drawer .ai-empty .ai-hint {
+      display: inline-block; margin-top: 12px;
+      font-family: var(--mono, ui-monospace, monospace);
+      font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--accent-dim, #7a6428);
+    }
+    #ai-drawer .ai-suggestions {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-top: 16px; align-items: stretch;
+    }
+    #ai-drawer .ai-suggestions button {
+      background: transparent;
+      border: 1px solid var(--border, #2e2e2a);
+      color: var(--text, #e2ddd4);
+      padding: 12px;
+      border-radius: 6px;
+      font-family: var(--sans, system-ui);
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #ai-drawer .ai-suggestions button:active {
+      background: rgba(200,168,75,0.08);
+      border-color: var(--accent-dim);
+    }
+
+    #ai-drawer .ai-inputbar {
+      flex-shrink: 0;
+      display: flex; gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border, #2e2e2a);
+      background: var(--surface, #181816);
+    }
+    #ai-drawer .ai-inputbar textarea {
+      flex: 1 1 auto;
+      resize: none;
+      border: 1px solid var(--border, #2e2e2a);
+      background: var(--panel, #1f1f1c);
+      color: var(--text, #e2ddd4);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: var(--sans, system-ui);
+      font-size: 16px; /* prevents iOS zoom */
+      line-height: 1.4;
+      min-height: 44px; max-height: 120px;
+      outline: none;
+    }
+    #ai-drawer .ai-inputbar textarea:focus {
+      border-color: var(--accent-dim, #7a6428);
+    }
+    #ai-drawer .ai-inputbar button {
+      flex-shrink: 0;
+      width: 56px; min-height: 44px;
+      border: 1px solid var(--accent-dim, #7a6428);
+      background: rgba(200,168,75,0.10);
+      color: var(--accent, #c8a84b);
+      border-radius: 6px;
+      font-family: var(--mono, monospace);
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #ai-drawer .ai-inputbar button:disabled { opacity: 0.4; cursor: not-allowed; }
+    #ai-drawer .ai-disclaimer {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--muted, #9b9690);
+      background: var(--surface, #181816);
+      border-top: 1px solid var(--border, #2e2e2a);
+      text-align: center;
+    }
+    #ai-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 9400; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #ai-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    @media (min-width: 720px) {
+      #ai-drawer {
+        left: auto; right: max(20px, env(safe-area-inset-right, 20px));
+        bottom: 20px;
+        width: 440px; height: 600px; max-height: 80vh;
+        border-radius: 14px;
+        border: 1px solid var(--accent-dim, #7a6428);
+      }
+      #ai-drawer { transform: translateY(calc(100% + 24px)); }
+      #ai-drawer.open { transform: translateY(0); }
+    }
+  </style>
+
+  <div id="ai-backdrop" aria-hidden="true"></div>
+  <button id="ai-fab" aria-label="Open AI assistant" title="Ask the Machinist">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+    </svg>
+  </button>
+  <div id="ai-drawer" role="dialog" aria-modal="true" aria-label="AI machining assistant" hidden>
+    <div class="ai-header">
+      <div class="ai-title">Ask the Machinist</div>
+      <button class="ai-close" aria-label="Close" id="ai-close-btn">×</button>
+    </div>
+    <div class="ai-messages" id="ai-messages">
+      <div class="ai-empty">
+        Domain-trained AI for speeds and feeds troubleshooting.<br>
+        Sees your current calculator state.
+        <div class="ai-suggestions" id="ai-suggestions"></div>
+        <div class="ai-hint">Ask a question ↓</div>
+      </div>
+    </div>
+    <div class="ai-inputbar">
+      <textarea id="ai-input" placeholder="Why is my insert chipping?" rows="1" autocomplete="off"></textarea>
+      <button id="ai-send" type="button">Send</button>
+    </div>
+    <div class="ai-disclaimer">
+      AI suggestions are advisory only. Verify with your machine and toolmaker before running production.
+    </div>
+  </div>
+
+  <script>
+    (function aiChat() {
+      'use strict';
+      /* ========================================================================
+         CHAT_API_URL — update this after deploying the Cloudflare Worker.
+         Run `npx wrangler deploy` from the backend/ folder to get your URL.
+         For local dev: `npx wrangler dev` listens on http://localhost:8787
+         ======================================================================== */
+      var CHAT_API_URL = window.CNC_CHAT_API_URL ||
+        'https://cnc-calc-api.marcusmace51.workers.dev/api/chat';
+
+      var fab       = document.getElementById('ai-fab');
+      var drawer    = document.getElementById('ai-drawer');
+      var backdrop  = document.getElementById('ai-backdrop');
+      var closeBtn  = document.getElementById('ai-close-btn');
+      var messagesEl= document.getElementById('ai-messages');
+      var inputEl   = document.getElementById('ai-input');
+      var sendBtn   = document.getElementById('ai-send');
+      var suggList  = document.getElementById('ai-suggestions');
+
+      var history = []; /* [{role, content}] */
+      var sending = false;
+
+      var SUGGESTIONS = [
+        'Why might my surface finish be poor?',
+        'My insert is chipping — what should I change?',
+        'Suggest a safer SFM for my current setup',
+        'Is this WOC reasonable for the tool diameter?'
+      ];
+      SUGGESTIONS.forEach(function(s) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.textContent = s;
+        b.addEventListener('click', function() {
+          inputEl.value = s;
+          sendMessage();
+        });
+        suggList.appendChild(b);
+      });
+
+      function openDrawer() {
+        drawer.hidden = false;
+        /* allow display:flex to take effect before transition */
+        requestAnimationFrame(function() {
+          drawer.classList.add('open');
+          backdrop.classList.add('open');
+        });
+        setTimeout(function() { inputEl.focus(); }, 280);
+      }
+      function closeDrawer() {
+        drawer.classList.remove('open');
+        backdrop.classList.remove('open');
+        setTimeout(function() { drawer.hidden = true; }, 280);
+      }
+      fab.addEventListener('click', openDrawer);
+      closeBtn.addEventListener('click', closeDrawer);
+      backdrop.addEventListener('click', closeDrawer);
+
+      /* Auto-resize textarea up to max-height */
+      inputEl.addEventListener('input', function() {
+        inputEl.style.height = 'auto';
+        inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+      });
+      inputEl.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey && !sending) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      sendBtn.addEventListener('click', function() { if (!sending) sendMessage(); });
+
+      /* ---- Snapshot: read the user's current calculator state ---- */
+      function getCalcSnapshot() {
+        var snap = { calc: null, mode: null, units: 'in', inputs: {}, outputs: {}, warnings: [] };
+        try {
+          var paneLathe = document.getElementById('app-lathe');
+          var paneMill  = document.getElementById('app-mill');
+          var isLathe = paneLathe && !paneLathe.hidden;
+          snap.calc = isLathe ? 'lathe' : 'mill';
+          var activeBtn = isLathe
+            ? document.querySelector('.calc-lathe .mode-btn.active')
+            : document.querySelector('.calc-mill .mode-btn.active');
+          if (activeBtn) snap.mode = activeBtn.getAttribute('data-mode');
+
+          if (typeof Units !== 'undefined' && Units && Units.state) {
+            snap.units = Units.state.metric ? 'mm/m-per-min' : 'in/SFM';
+          }
+
+          /* Inputs: any input or select that's visible (in an active panel/block) */
+          var allInputs = document.querySelectorAll('input[type="number"], input[type="text"], select');
+          allInputs.forEach(function(el) {
+            if (!el.id) return;
+            /* skip elements inside the chat drawer itself */
+            if (el.closest && el.closest('#ai-drawer')) return;
+            /* skip elements hidden via display:none/visibility */
+            if (el.offsetParent === null && !el.closest('[hidden]')) return;
+            var v = el.value;
+            if (v === '' || v == null) return;
+            /* For select, capture both value and label text */
+            if (el.tagName === 'SELECT') {
+              var opt = el.options[el.selectedIndex];
+              snap.inputs[el.id] = { value: v, label: opt ? opt.text : v };
+            } else {
+              snap.inputs[el.id] = v;
+            }
+          });
+
+          /* Outputs: visible result panels textContent (kept short) */
+          document.querySelectorAll('.results-panel.visible, #lt-results.visible, #lt-facing-results.visible, #lt-grooving-results.visible, #lt-partoff-results.visible').forEach(function(panel) {
+            var key = panel.id || 'result';
+            var txt = (panel.innerText || '').trim().replace(/\s+/g, ' ');
+            if (txt) snap.outputs[key] = txt.slice(0, 1200);
+          });
+
+          /* Warnings: any visible warn-box, advisory, or warning element */
+          document.querySelectorAll('.warn-box, .warn-text, .advisory, .boring-advisory, .warning-item').forEach(function(el) {
+            if (el.offsetParent === null) return;
+            var t = (el.innerText || '').trim();
+            if (t && snap.warnings.indexOf(t) < 0) snap.warnings.push(t.slice(0, 300));
+          });
+        } catch (e) {
+          snap._snapshotError = String(e.message || e);
+        }
+        return snap;
+      }
+
+      /* ---- Markdown (minimal, safe) ---- */
+      function escapeHTML(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      }
+      function renderMarkdown(text) {
+        var s = escapeHTML(text);
+        /* Code blocks ```...``` */
+        s = s.replace(/```([\s\S]*?)```/g, function(_, code) { return '<pre>' + code + '</pre>'; });
+        /* Inline code `...` */
+        s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+        /* Bold **...** */
+        s = s.replace(/\*\*([^*\n][^*]*?)\*\*/g, '<strong>$1</strong>');
+        /* Italic *...* (but not list bullets at line start) */
+        s = s.replace(/(^|[^*])\*([^*\n][^*]*?)\*/g, '$1<em>$2</em>');
+        /* Headings (simple): ### at line start */
+        s = s.replace(/^### (.+)$/gm, '<strong>$1</strong>');
+        /* Bullet lists */
+        s = s.replace(/(^|\n)[-*] (.+)/g, '$1<li>$2</li>');
+        s = s.replace(/(<li>[\s\S]*?<\/li>)(\n(?!<li))/g, '$1');
+        s = s.replace(/(<li>[\s\S]*?<\/li>(?:\n?<li>[\s\S]*?<\/li>)*)/g, '<ul>$1</ul>');
+        /* Newlines */
+        s = s.replace(/\n/g, '<br>');
+        return s;
+      }
+
+      /* ---- Send message ---- */
+      function clearEmptyHint() {
+        var empty = messagesEl.querySelector('.ai-empty');
+        if (empty) empty.remove();
+      }
+      function addMessage(role, content, className) {
+        var div = document.createElement('div');
+        div.className = 'ai-msg ' + role + (className ? ' ' + className : '');
+        div.innerHTML = role === 'user' ? escapeHTML(content) : renderMarkdown(content);
+        messagesEl.appendChild(div);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return div;
+      }
+      function updateMessage(div, content) {
+        div.innerHTML = renderMarkdown(content);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+      function setSending(s) {
+        sending = s;
+        sendBtn.disabled = s;
+        inputEl.disabled = s;
+      }
+
+      async function sendMessage() {
+        var text = inputEl.value.trim();
+        if (!text || sending) return;
+        clearEmptyHint();
+        addMessage('user', text);
+        history.push({ role: 'user', content: text });
+        inputEl.value = '';
+        inputEl.style.height = 'auto';
+
+        var assistantDiv = addMessage('assistant', '', 'thinking');
+        var assistantText = '';
+        setSending(true);
+
+        try {
+          var snapshot = getCalcSnapshot();
+          var resp = await fetch(CHAT_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: history, snapshot: snapshot })
+          });
+          if (!resp.ok) {
+            var errBody = await resp.text();
+            throw new Error('HTTP ' + resp.status + ': ' + errBody.slice(0, 200));
+          }
+          assistantDiv.classList.remove('thinking');
+
+          /* Parse SSE stream */
+          var reader = resp.body.getReader();
+          var decoder = new TextDecoder();
+          var buf = '';
+          while (true) {
+            var chunk = await reader.read();
+            if (chunk.done) break;
+            buf += decoder.decode(chunk.value, { stream: true });
+            var nl;
+            while ((nl = buf.indexOf('\n\n')) !== -1) {
+              var block = buf.slice(0, nl);
+              buf = buf.slice(nl + 2);
+              var m = block.match(/^data: (.+)$/m);
+              if (!m) continue;
+              var payload = m[1].trim();
+              if (payload === '[DONE]') continue;
+              try {
+                var evt = JSON.parse(payload);
+                if (evt.text) {
+                  assistantText += evt.text;
+                  updateMessage(assistantDiv, assistantText);
+                }
+              } catch (e) {}
+            }
+          }
+          if (assistantText) {
+            history.push({ role: 'assistant', content: assistantText });
+          } else {
+            assistantDiv.innerHTML = '<em style="color:var(--muted)">No response received.</em>';
+          }
+        } catch (e) {
+          assistantDiv.classList.remove('thinking');
+          assistantDiv.innerHTML = '<strong style="color:#c84b4b">Error:</strong> ' +
+            escapeHTML(String(e.message || e)) +
+            '<br><small style="color:var(--muted)">Check that CHAT_API_URL is correct and your backend is deployed. See backend/SETUP.md.</small>';
+        } finally {
+          setSending(false);
+          inputEl.focus();
+        }
+      }
+    })();
+  </script>
   <script>
     /* Service-worker registration + update-available toast + offline diagnostic.
 
