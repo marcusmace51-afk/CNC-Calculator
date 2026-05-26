@@ -14673,6 +14673,47 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       border-top: 1px solid var(--border, #2e2e2a);
       text-align: center;
     }
+
+    /* Header actions (new-chat + close) */
+    #ai-drawer .ai-header-actions { display: flex; align-items: center; gap: 2px; }
+    #ai-drawer .ai-iconbtn {
+      width: 36px; height: 36px; border: none; background: transparent;
+      color: var(--muted, #9b9690); font-size: 17px; line-height: 1; cursor: pointer;
+      -webkit-tap-highlight-color: transparent; border-radius: 6px;
+    }
+    #ai-drawer .ai-iconbtn:active { color: var(--accent, #c8a84b); }
+
+    /* Typing indicator (animated dots) */
+    #ai-drawer .ai-typing { display: inline-flex; gap: 5px; align-items: center; padding: 4px 2px; }
+    #ai-drawer .ai-typing span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent-dim, #7a6428); animation: aiBlink 1.2s infinite;
+    }
+    #ai-drawer .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+    #ai-drawer .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes aiBlink { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
+
+    /* Markdown tables + ordered lists inside messages */
+    #ai-drawer .ai-msg table { border-collapse: collapse; margin: 8px 0; width: 100%; font-size: 12.5px; }
+    #ai-drawer .ai-msg th, #ai-drawer .ai-msg td {
+      border: 1px solid var(--border, #2e2e2a); padding: 5px 8px; text-align: left; vertical-align: top;
+    }
+    #ai-drawer .ai-msg th { color: var(--accent, #c8a84b); font-weight: 600; }
+    #ai-drawer .ai-msg ol { margin: 4px 0 4px 20px; }
+
+    /* Copy button on assistant replies */
+    #ai-drawer .ai-copy {
+      margin-top: 8px; background: transparent; border: 1px solid var(--border, #2e2e2a);
+      color: var(--muted, #9b9690); font-family: var(--mono, monospace);
+      font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 5px 10px; border-radius: 4px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    #ai-drawer .ai-copy:active { color: var(--accent, #c8a84b); border-color: var(--accent-dim, #7a6428); }
+
+    /* Send button turns into a Stop control while streaming */
+    #ai-drawer .ai-inputbar button.stopping {
+      color: #c84b4b; border-color: #c84b4b; background: rgba(200,75,75,0.10);
+    }
     #ai-backdrop {
       position: fixed; inset: 0; background: rgba(0,0,0,0.5);
       z-index: 9400; opacity: 0; pointer-events: none;
@@ -14702,9 +14743,12 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
   <div id="ai-drawer" role="dialog" aria-modal="true" aria-label="AI machining assistant" hidden>
     <div class="ai-header">
       <div class="ai-title">Ask the Machinist</div>
-      <button class="ai-close" aria-label="Close" id="ai-close-btn">×</button>
+      <div class="ai-header-actions">
+        <button class="ai-iconbtn" id="ai-new-btn" aria-label="New chat" title="New chat">&#8635;</button>
+        <button class="ai-close" aria-label="Close" id="ai-close-btn">×</button>
+      </div>
     </div>
-    <div class="ai-messages" id="ai-messages">
+    <div class="ai-messages" id="ai-messages" aria-live="polite" aria-atomic="false">
       <div class="ai-empty">
         Domain-trained AI for speeds and feeds troubleshooting.<br>
         Sees your current calculator state.
@@ -14739,10 +14783,12 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       var messagesEl= document.getElementById('ai-messages');
       var inputEl   = document.getElementById('ai-input');
       var sendBtn   = document.getElementById('ai-send');
-      var suggList  = document.getElementById('ai-suggestions');
+      var newBtn    = document.getElementById('ai-new-btn');
 
       var history = []; /* [{role, content}] */
       var sending = false;
+      var currentAbort = null;
+      var EMPTY_HTML = messagesEl.innerHTML; /* capture the initial empty-state markup */
 
       var SUGGESTIONS = [
         'Why might my surface finish be poor?',
@@ -14750,15 +14796,42 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         'Suggest a safer SFM for my current setup',
         'Is this WOC reasonable for the tool diameter?'
       ];
-      SUGGESTIONS.forEach(function(s) {
-        var b = document.createElement('button');
-        b.type = 'button'; b.textContent = s;
-        b.addEventListener('click', function() {
-          inputEl.value = s;
-          sendMessage();
+      function bindSuggestions() {
+        var list = document.getElementById('ai-suggestions');
+        if (!list) return;
+        SUGGESTIONS.forEach(function(s) {
+          var b = document.createElement('button');
+          b.type = 'button'; b.textContent = s;
+          b.addEventListener('click', function() { inputEl.value = s; sendMessage(); });
+          list.appendChild(b);
         });
-        suggList.appendChild(b);
-      });
+      }
+      bindSuggestions();
+
+      function newChat() {
+        if (sending && currentAbort) currentAbort.abort();
+        history = [];
+        messagesEl.innerHTML = EMPTY_HTML;
+        bindSuggestions();
+        inputEl.value = '';
+        inputEl.style.height = 'auto';
+        inputEl.focus();
+      }
+      newBtn.addEventListener('click', newChat);
+
+      /* Keep the drawer (and its input bar) above the on-screen keyboard on
+         mobile by tracking visualViewport and lifting the drawer's bottom edge
+         by the keyboard height. */
+      function syncViewport() {
+        if (!window.visualViewport || !drawer.classList.contains('open')) return;
+        var vv = window.visualViewport;
+        var keyboard = window.innerHeight - vv.height - vv.offsetTop;
+        drawer.style.bottom = Math.max(0, keyboard) + 'px';
+      }
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', syncViewport);
+        window.visualViewport.addEventListener('scroll', syncViewport);
+      }
 
       function openDrawer() {
         drawer.hidden = false;
@@ -14767,11 +14840,13 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
           drawer.classList.add('open');
           backdrop.classList.add('open');
         });
-        setTimeout(function() { inputEl.focus(); }, 280);
+        setTimeout(function() { inputEl.focus(); syncViewport(); }, 280);
       }
       function closeDrawer() {
         drawer.classList.remove('open');
         backdrop.classList.remove('open');
+        drawer.style.bottom = '';
+        if (inputEl) inputEl.blur();
         setTimeout(function() { drawer.hidden = true; }, 280);
       }
       fab.addEventListener('click', openDrawer);
@@ -14789,7 +14864,10 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
           sendMessage();
         }
       });
-      sendBtn.addEventListener('click', function() { if (!sending) sendMessage(); });
+      sendBtn.addEventListener('click', function() {
+        if (sending) { if (currentAbort) currentAbort.abort(); }
+        else sendMessage();
+      });
 
       /* ---- Snapshot: read the user's current calculator state ---- */
       function getCalcSnapshot() {
@@ -14851,25 +14929,61 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
                 .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
       }
-      function renderMarkdown(text) {
-        var s = escapeHTML(text);
-        /* Code blocks ```...``` */
-        s = s.replace(/```([\s\S]*?)```/g, function(_, code) { return '<pre>' + code + '</pre>'; });
-        /* Inline code `...` */
-        s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-        /* Bold **...** */
-        s = s.replace(/\*\*([^*\n][^*]*?)\*\*/g, '<strong>$1</strong>');
-        /* Italic *...* (but not list bullets at line start) */
-        s = s.replace(/(^|[^*])\*([^*\n][^*]*?)\*/g, '$1<em>$2</em>');
-        /* Headings (simple): ### at line start */
-        s = s.replace(/^### (.+)$/gm, '<strong>$1</strong>');
-        /* Bullet lists */
-        s = s.replace(/(^|\n)[-*] (.+)/g, '$1<li>$2</li>');
-        s = s.replace(/(<li>[\s\S]*?<\/li>)(\n(?!<li))/g, '$1');
-        s = s.replace(/(<li>[\s\S]*?<\/li>(?:\n?<li>[\s\S]*?<\/li>)*)/g, '<ul>$1</ul>');
-        /* Newlines */
-        s = s.replace(/\n/g, '<br>');
+      function renderInline(s) {
+        s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+        s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        s = s.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
         return s;
+      }
+      /* Line-based markdown: code fences, tables, ordered/unordered lists,
+         headings, paragraphs. More robust than the previous regex approach. */
+      function renderMarkdown(text) {
+        var lines = escapeHTML(text).split('\n');
+        var out = '', i = 0;
+        function isTableRow(l) { return /^\s*\|.*\|\s*$/.test(l); }
+        function cells(l) { return l.trim().replace(/^\||\|$/g, '').split('|').map(function(c){ return renderInline(c.trim()); }); }
+        while (i < lines.length) {
+          var line = lines[i];
+          if (/^```/.test(line)) {
+            var code = []; i++;
+            while (i < lines.length && !/^```/.test(lines[i])) { code.push(lines[i]); i++; }
+            i++;
+            out += '<pre>' + code.join('\n') + '</pre>';
+            continue;
+          }
+          if (isTableRow(line) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+            var hdr = cells(line); i += 2;
+            var body = '';
+            while (i < lines.length && isTableRow(lines[i])) {
+              body += '<tr>' + cells(lines[i]).map(function(c){ return '<td>' + c + '</td>'; }).join('') + '</tr>';
+              i++;
+            }
+            out += '<table><thead><tr>' + hdr.map(function(h){ return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + body + '</tbody></table>';
+            continue;
+          }
+          if (/^\s*[-*]\s+/.test(line)) {
+            var ul = '';
+            while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+              ul += '<li>' + renderInline(lines[i].replace(/^\s*[-*]\s+/, '')) + '</li>'; i++;
+            }
+            out += '<ul>' + ul + '</ul>';
+            continue;
+          }
+          if (/^\s*\d+\.\s+/.test(line)) {
+            var ol = '';
+            while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+              ol += '<li>' + renderInline(lines[i].replace(/^\s*\d+\.\s+/, '')) + '</li>'; i++;
+            }
+            out += '<ol>' + ol + '</ol>';
+            continue;
+          }
+          if (/^#{1,4}\s+/.test(line)) {
+            out += '<strong>' + renderInline(line.replace(/^#{1,4}\s+/, '')) + '</strong><br>'; i++; continue;
+          }
+          if (line.trim() === '') { out += '<br>'; i++; continue; }
+          out += renderInline(line) + '<br>'; i++;
+        }
+        return out;
       }
 
       /* ---- Send message ---- */
@@ -14877,22 +14991,44 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         var empty = messagesEl.querySelector('.ai-empty');
         if (empty) empty.remove();
       }
+      function nearBottom() {
+        return messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 90;
+      }
+      function scrollToBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
+
       function addMessage(role, content, className) {
         var div = document.createElement('div');
         div.className = 'ai-msg ' + role + (className ? ' ' + className : '');
         div.innerHTML = role === 'user' ? escapeHTML(content) : renderMarkdown(content);
         messagesEl.appendChild(div);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+        scrollToBottom();
         return div;
       }
+      function showTyping(div) {
+        div.innerHTML = '<span class="ai-typing"><span></span><span></span><span></span></span>';
+      }
       function updateMessage(div, content) {
+        var stick = nearBottom();
         div.innerHTML = renderMarkdown(content);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+        if (stick) scrollToBottom();
+      }
+      function addCopyButton(div, getText) {
+        var btn = document.createElement('button');
+        btn.className = 'ai-copy'; btn.type = 'button'; btn.textContent = 'Copy';
+        btn.addEventListener('click', function() {
+          var t = getText();
+          var done = function() { btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = 'Copy'; }, 1500); };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(t).then(done).catch(function(){ done(); });
+          } else { done(); }
+        });
+        div.appendChild(btn);
       }
       function setSending(s) {
         sending = s;
-        sendBtn.disabled = s;
         inputEl.disabled = s;
+        if (s) { sendBtn.textContent = 'Stop'; sendBtn.classList.add('stopping'); }
+        else   { sendBtn.textContent = 'Send'; sendBtn.classList.remove('stopping'); }
       }
 
       async function sendMessage() {
@@ -14904,22 +15040,24 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         inputEl.value = '';
         inputEl.style.height = 'auto';
 
-        var assistantDiv = addMessage('assistant', '', 'thinking');
+        var assistantDiv = addMessage('assistant', '', '');
+        showTyping(assistantDiv);
         var assistantText = '';
         setSending(true);
+        currentAbort = new AbortController();
 
         try {
           var snapshot = getCalcSnapshot();
           var resp = await fetch(CHAT_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: history, snapshot: snapshot })
+            body: JSON.stringify({ messages: history, snapshot: snapshot }),
+            signal: currentAbort.signal
           });
           if (!resp.ok) {
             var errBody = await resp.text();
             throw new Error('HTTP ' + resp.status + ': ' + errBody.slice(0, 200));
           }
-          assistantDiv.classList.remove('thinking');
 
           /* Parse SSE stream */
           var reader = resp.body.getReader();
@@ -14948,15 +15086,26 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
           }
           if (assistantText) {
             history.push({ role: 'assistant', content: assistantText });
+            addCopyButton(assistantDiv, function() { return assistantText; });
           } else {
             assistantDiv.innerHTML = '<em style="color:var(--muted)">No response received.</em>';
           }
         } catch (e) {
-          assistantDiv.classList.remove('thinking');
-          assistantDiv.innerHTML = '<strong style="color:#c84b4b">Error:</strong> ' +
-            escapeHTML(String(e.message || e)) +
-            '<br><small style="color:var(--muted)">Check that CHAT_API_URL is correct and your backend is deployed. See backend/SETUP.md.</small>';
+          var aborted = (e && (e.name === 'AbortError'));
+          if (aborted && assistantText) {
+            /* Keep the partial answer the user already saw */
+            history.push({ role: 'assistant', content: assistantText });
+            updateMessage(assistantDiv, assistantText + '\n\n_(stopped)_');
+            addCopyButton(assistantDiv, function() { return assistantText; });
+          } else if (aborted) {
+            assistantDiv.innerHTML = '<em style="color:var(--muted)">Stopped.</em>';
+          } else {
+            assistantDiv.innerHTML = '<strong style="color:#c84b4b">Error:</strong> ' +
+              escapeHTML(String(e.message || e)) +
+              '<br><small style="color:var(--muted)">Check your connection and try again. If it persists, the AI service may be temporarily unavailable.</small>';
+          }
         } finally {
+          currentAbort = null;
           setSending(false);
           inputEl.focus();
         }
