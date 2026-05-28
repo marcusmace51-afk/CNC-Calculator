@@ -134,6 +134,13 @@
     letter-spacing: 0.05em;
   }
 
+  /* Field-label helpers (mill input streamlining) */
+  .opt-tag {
+    font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); opacity: 0.6; margin-left: 6px; font-weight: 400;
+  }
+  .lbl-sub { color: var(--muted); opacity: 0.65; font-weight: 400; }
+
   .calc-lathe .input-wrap {
     position: relative;
   }
@@ -4232,7 +4239,7 @@
           <div class="field-error" id="m-err-dia"></div>
         </div>
         <div class="field">
-          <label for="m-flutes">Number of flutes</label>
+          <label for="m-flutes">Flutes</label>
           <select id="m-flutes">
             <option value="2">2 flutes</option>
             <option value="3">3 flutes</option>
@@ -4246,14 +4253,14 @@
       </div>
       <div class="field-row">
         <div class="field">
-          <label for="m-stickout">Stickout (optional — L/D advisory)</label>
+          <label for="m-stickout">Stickout <span class="opt-tag">optional</span></label>
           <div class="input-wrap">
             <input type="number" id="m-stickout" placeholder="0" step="0.001" min="0" style="padding-right:12px;" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
           </div>
         </div>
         <div class="field">
-          <label for="m-corner-rad">Corner radius (optional — reference)</label>
+          <label for="m-corner-rad">Corner radius <span class="opt-tag">optional</span></label>
           <div class="input-wrap">
             <input type="number" id="m-corner-rad" placeholder="0" step="0.001" min="0" style="padding-right:12px;" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -4267,7 +4274,7 @@
       <div class="block-label">Cut geometry</div>
       <div class="field-row">
         <div class="field">
-          <label for="m-woc">Radial engagement (WOC / stepover)</label>
+          <label for="m-woc">Radial WOC <span class="lbl-sub">stepover</span></label>
           <div class="input-wrap">
             <input type="number" id="m-woc" placeholder="0" step="0.001" min="0.001" oninput="mUpdateWocHint()" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -4276,7 +4283,7 @@
           <div class="field-error" id="m-err-woc"></div>
         </div>
         <div class="field">
-          <label for="m-doc">Axial DOC (optional — for MRR)</label>
+          <label for="m-doc">Axial DOC <span class="opt-tag">optional</span></label>
           <div class="input-wrap">
             <input type="number" id="m-doc" placeholder="0" step="0.001" min="0" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -4284,7 +4291,7 @@
         </div>
       </div>
       <div class="field">
-        <label for="m-max-rpm">Max spindle RPM (machine limit — optional)</label>
+        <label for="m-max-rpm">Max RPM <span class="opt-tag">optional</span></label>
         <div class="input-wrap">
           <input type="number" id="m-max-rpm" placeholder="0" step="1" min="1" style="padding-right:12px;" />
         </div>
@@ -4305,7 +4312,7 @@
           <div class="field-error" id="m-err-sfm"></div>
         </div>
         <div class="field">
-          <label for="m-ipt">Chip load per tooth (IPT)</label>
+          <label for="m-ipt">Chip load / tooth</label>
           <div class="input-wrap">
             <input type="number" id="m-ipt" placeholder="0" step="0.0001" min="0.00001" data-unit="ipt" />
             <span class="unit-tag" data-unit-label="ipt">IPT</span>
@@ -4682,7 +4689,7 @@
         </div>
       </div>
       <div class="field">
-        <label for="d-size-picker">Standard drill size (auto-fills diameter)</label>
+        <label for="d-size-picker">Standard size <span class="lbl-sub">· auto-fills Ø</span></label>
         <select id="d-size-picker" onchange="dPickSize()">
           <option value="">Custom — enter diameter above</option>
         </select>
@@ -4702,7 +4709,7 @@
       <div class="block-label">Hole parameters</div>
       <div class="field-row">
         <div class="field">
-          <label for="d-depth">Total hole depth</label>
+          <label for="d-depth">Hole depth</label>
           <div class="input-wrap">
             <input type="number" id="d-depth" placeholder="0" step="0.001" min="0.001" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -4710,7 +4717,7 @@
           <div class="field-error" id="d-err-depth"></div>
         </div>
         <div class="field">
-          <label for="d-peck">Peck depth (0 = no peck)</label>
+          <label for="d-peck">Peck depth <span class="opt-tag">optional</span> <span class="lbl-sub">· 0 = none</span></label>
           <div class="input-wrap">
             <input type="number" id="d-peck" placeholder="0" step="0.001" min="0" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -4718,7 +4725,7 @@
         </div>
       </div>
       <div class="field">
-        <label for="d-max-rpm">Max spindle RPM (optional)</label>
+        <label for="d-max-rpm">Max RPM <span class="opt-tag">optional</span></label>
         <div class="input-wrap">
           <input type="number" id="d-max-rpm" placeholder="0" step="1" min="1" style="padding-right:12px;" />
         </div>
@@ -4739,7 +4746,7 @@
           <div class="field-error" id="d-err-sfm"></div>
         </div>
         <div class="field">
-          <label for="d-ipr">Feed per revolution (IPR)</label>
+          <label for="d-ipr">Feed / rev</label>
           <div class="input-wrap">
             <input type="number" id="d-ipr" placeholder="0" step="0.0001" min="0.0001" data-unit="ipr" />
             <span class="unit-tag" data-unit-label="ipr">IPR</span>
@@ -4973,7 +4980,7 @@
       <div class="block-label">Reamer geometry</div>
       <div class="field-row">
         <div class="field">
-          <label for="rm-dia">Reamer diameter (finished hole)</label>
+          <label for="rm-dia">Finished diameter <span class="lbl-sub">· reamer Ø</span></label>
           <div class="input-wrap">
             <input type="number" id="rm-dia" placeholder="0" step="0.001" min="0.001" oninput="rmUpdateStock()" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -4991,7 +4998,7 @@
       </div>
       <div class="field-row">
         <div class="field">
-          <label for="rm-pre">Pre-drilled hole diameter</label>
+          <label for="rm-pre">Pre-drill diameter</label>
           <div class="input-wrap">
             <input type="number" id="rm-pre" placeholder="0" step="0.001" min="0.001" oninput="rmUpdateStock()" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -5023,7 +5030,7 @@
           <div class="field-error" id="rm-err-depth"></div>
         </div>
         <div class="field">
-          <label for="rm-max-rpm">Max spindle RPM (optional)</label>
+          <label for="rm-max-rpm">Max RPM <span class="opt-tag">optional</span></label>
           <div class="input-wrap">
             <input type="number" id="rm-max-rpm" placeholder="0" step="1" min="1" style="padding-right:12px;" />
           </div>
@@ -5044,7 +5051,7 @@
           <div class="field-error" id="rm-err-sfm"></div>
         </div>
         <div class="field">
-          <label for="rm-ipr">Feed per revolution (IPR)</label>
+          <label for="rm-ipr">Feed / rev</label>
           <div class="input-wrap">
             <input type="number" id="rm-ipr" placeholder="0" step="0.0001" min="0.0001" data-unit="ipr" />
             <span class="unit-tag" data-unit-label="ipr">IPR</span>
@@ -8947,6 +8954,34 @@ function applyDrillIPR(val) {
 }
 
 /* ── Drill lookup UI handlers ── */
+/* Drill SFM fallback — when a tool class is flagged [0,0] ("not applicable")
+   for a material, derive a conservative range from the best available tool
+   class in the same entry rather than dead-ending. Factors approximate drilling
+   SFM relative to solid/uncoated carbide (=1.0); e.g. solid carbide [22,55] ->
+   HSS ~[7,17], matching the lathe's nickel-superalloy HSS data [8,15]. */
+var DRILL_SFM_FACTOR = {
+  hss: 0.30, hss_co: 0.42, cobalt_hss: 0.42,
+  carbide_tipped: 0.75, carbide_uncoated: 1.0, solid_carbide: 1.0,
+  carbide_coated: 1.30
+};
+function drillSfmFallback(sfmObj, wantKey) {
+  if (!sfmObj) return null;
+  var f = DRILL_SFM_FACTOR;
+  var wf = f[wantKey] || 0.30;
+  var best = null, bestKey = null;
+  for (var k in sfmObj) {
+    var r = sfmObj[k];
+    if (r && (r[0] > 0 || r[1] > 0) && f[k]) {
+      if (!best || f[k] > f[bestKey]) { best = r; bestKey = k; }
+    }
+  }
+  if (!best) return null;
+  var bf = f[bestKey];
+  var lo = Math.max(1, Math.round(best[0] * wf / bf));
+  var hi = Math.max(lo + 1, Math.round(best[1] * wf / bf));
+  return [lo, hi];
+}
+
 function onDrillLookupChange() {
   var mat  = document.getElementById('lt-drill-material').value;
   var tool = document.getElementById('lt-drill-tool').value;
@@ -8967,16 +9002,23 @@ function applyDrillLookup() {
   var sfmRange = entry[toolKey];
   if (!sfmRange) return;
 
-  /* Guard: tool-class not viable for this material (range [0,0]) */
+  /* Tool class flagged not-applicable [0,0]: warn but still calculate using a
+     conservative fallback from the best available tool class. */
+  var ltDrillNotRec = false;
   if (sfmRange[0] === 0 && sfmRange[1] === 0) {
-    document.getElementById('lt-drill-sfm-note').innerHTML =
-      '<span class="warn">\u26a0 This drill class is not recommended for the selected material. ' +
-      'Choose a different drill material (e.g. solid carbide for hardened steel).</span>';
-    document.getElementById('lt-drill-ipr-grid').innerHTML = '';
-    document.getElementById('lt-drill-mat-note').style.display = 'none';
-    document.getElementById('lt-drill-lookup-note').innerHTML = '';
-    document.getElementById('lt-drill-lookup-result').style.display = 'block';
-    return;
+    var ltFb = drillSfmFallback(entry, toolKey);
+    if (!ltFb) {
+      document.getElementById('lt-drill-sfm-note').innerHTML =
+        '<span class="warn">\u26a0 No drilling data for this material/tool combination. ' +
+        'Choose a different drill material.</span>';
+      document.getElementById('lt-drill-ipr-grid').innerHTML = '';
+      document.getElementById('lt-drill-mat-note').style.display = 'none';
+      document.getElementById('lt-drill-lookup-note').innerHTML = '';
+      document.getElementById('lt-drill-lookup-result').style.display = 'block';
+      return;
+    }
+    sfmRange = ltFb;
+    ltDrillNotRec = true;
   }
 
   /* SFM: midpoint of range → write to field (convert to m/min in metric mode) */
@@ -8989,7 +9031,9 @@ function applyDrillLookup() {
   /* SFM summary line */
   var dSpdLbl = U.speedLabel();
   document.getElementById('lt-drill-sfm-note').innerHTML =
+    (ltDrillNotRec ? '<span class="warn">\u26a0 This drill type is not recommended for this material \u2014 conservative estimate shown; solid carbide strongly preferred.</span><br>' : '') +
     dSpdLbl + ' range: <span class="val">' + U.fmtSpeed(sfmRange[0]) + '\u2013' + U.fmtSpeed(sfmRange[1]) + ' ' + dSpdLbl + '</span>' +
+    (ltDrillNotRec ? ' (est.)' : '') +
     '&nbsp;&nbsp;\u2192&nbsp;&nbsp;Applied: <span class="val">' + U.fmtSpeed(sfmMid) + ' ' + dSpdLbl + '</span> (midpoint)';
 
   /* IPR: based on current drill diameter if entered */
@@ -12606,16 +12650,22 @@ function dApplyLookup(){
   var entry=DRILL_DB[matKey]; if(!entry) return;
   var sfmR=entry.sfm[drillType];
 
+  /* Tool class flagged not-applicable [0,0]: warn but still calculate using a
+     conservative fallback (matches the lathe's always-give-a-number behavior). */
+  var dNotRec=false;
   if(!sfmR||(sfmR[0]===0&&sfmR[1]===0)){
-    document.getElementById('d-lk-range').textContent='N/A';
-    document.getElementById('d-lk-mid').textContent='\u2014';
-    document.getElementById('d-lk-note').innerHTML='<span style="color:#e2807a;">\u26a0 Selected drill type not recommended for this material. Use solid carbide.</span>';
-    document.getElementById('d-lk-cool-note').textContent='';
-    var r=document.getElementById('d-lk-result');
-    r.classList.add('visible');
-    document.getElementById('d-ipr-result').style.display='none';
-    document.getElementById('d-peck-rec-sec').style.display='none';
-    return;
+    var dFb=drillSfmFallback(entry.sfm, drillType);
+    if(!dFb){
+      document.getElementById('d-lk-range').textContent='N/A';
+      document.getElementById('d-lk-mid').textContent='\u2014';
+      document.getElementById('d-lk-note').innerHTML='<span style="color:#e2807a;">\u26a0 No drilling data for this material/tool combination.</span>';
+      document.getElementById('d-lk-cool-note').textContent='';
+      document.getElementById('d-lk-result').classList.add('visible');
+      document.getElementById('d-ipr-result').style.display='none';
+      document.getElementById('d-peck-rec-sec').style.display='none';
+      return;
+    }
+    sfmR=dFb; dNotRec=true;
   }
 
   document.getElementById('d-ipr-result').style.display='block';
@@ -12625,9 +12675,9 @@ function dApplyLookup(){
   document.getElementById('d-sfm').classList.remove('error');
   document.getElementById('d-err-sfm').textContent='';
 
-  document.getElementById('d-lk-range').innerHTML=sfmR[0].toLocaleString()+'\u2013'+sfmR[1].toLocaleString()+' SFM';
+  document.getElementById('d-lk-range').innerHTML=sfmR[0].toLocaleString()+'\u2013'+sfmR[1].toLocaleString()+' SFM'+(dNotRec?' (est.)':'');
   document.getElementById('d-lk-mid').textContent=sfmMid.toLocaleString();
-  document.getElementById('d-lk-note').innerHTML='<span>'+entry.note+'</span>';
+  document.getElementById('d-lk-note').innerHTML=(dNotRec?'<span style="color:#e2807a;">\u26a0 This drill type is not recommended for this material \u2014 conservative estimate shown; solid carbide strongly preferred.</span><br>':'')+'<span>'+entry.note+'</span>';
   document.getElementById('d-lk-cool-note').innerHTML='<span>Coolant: '+coolMod.label+'</span>';
 
   var diaRaw=uReadIn('d-dia');
