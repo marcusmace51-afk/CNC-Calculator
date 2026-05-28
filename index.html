@@ -2330,46 +2330,26 @@
        position:sticky, which pins it to the right edge of the visible viewport
        even as the user scrolls horizontally — until the very end where the
        padding-right pushes it off, signalling no more content. */
+    /* Mode strip — 4-column grid so all 8 modes are visible at once
+       (no horizontal scrolling / off-screen modes). Two-word modes
+       (Thread Mill, Part-Off) wrap to a second line. */
     .mode-toggle {
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scroll-snap-type: x proximity;
-      gap: 8px;
-      padding: 0 28px 4px 0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
       margin: 0 0 1.75rem 0;
-      scrollbar-width: none;
-      mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 40px), transparent 100%);
-      -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 40px), transparent 100%);
-    }
-    .mode-toggle::-webkit-scrollbar { display: none; }
-    .mode-toggle::after {
-      content: '\203A';   /* › single-right-pointing-angle */
-      position: sticky;
-      right: 4px;
-      flex: 0 0 auto;
-      align-self: center;
-      color: var(--accent);
-      font-size: 22px;
-      line-height: 1;
-      pointer-events: none;
-      margin-left: -16px;   /* overlap the trailing padding */
-      padding-left: 4px;
-      animation: mode-strip-hint 1.6s ease-in-out 0.4s 2;
-    }
-    @keyframes mode-strip-hint {
-      0%, 100% { opacity: 0.7; }
-      50%      { opacity: 1.0; }
     }
     .mode-btn {
-      flex: 0 0 auto;
-      scroll-snap-align: start;
       min-height: 48px;
-      min-width: 92px;
-      white-space: nowrap;
-      padding: 12px 18px;
-      font-size: 12px;
+      padding: 8px 4px;
+      font-size: 11px;
+      line-height: 1.2;
+      white-space: normal;
+      word-break: break-word;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
 
     /* Calculate button: big thumb target */
@@ -4338,29 +4318,6 @@
 
     <!-- Cutting parameters -->
     <div class="block">
-      <div class="block-label">Cutting parameters</div>
-      <div class="field-row">
-        <div class="field">
-          <label for="m-sfm">Surface speed</label>
-          <div class="input-wrap">
-            <input type="number" id="m-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
-            <span class="unit-tag" data-unit-label="sfm">SFM</span>
-          </div>
-          <div class="field-error" id="m-err-sfm"></div>
-        </div>
-        <div class="field">
-          <label for="m-ipt">Chip load / tooth</label>
-          <div class="input-wrap">
-            <input type="number" id="m-ipt" placeholder="0" step="0.0001" min="0.00001" data-unit="ipt" />
-            <span class="unit-tag" data-unit-label="ipt">IPT</span>
-          </div>
-          <div class="field-error" id="m-err-ipt"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SFM & chip load reference -->
-    <div class="block">
       <div class="block-label block-label-toggle" onclick="toggleSection('m-lookup-body','m-lookup-arrow')">
         SFM &amp; chip load reference
         <span class="lbl-line"></span>
@@ -4552,7 +4509,30 @@
 
       </div>
       </div>
+    </div><div class="block">
+      <div class="block-label">Cutting parameters</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="m-sfm">Surface speed</label>
+          <div class="input-wrap">
+            <input type="number" id="m-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
+            <span class="unit-tag" data-unit-label="sfm">SFM</span>
+          </div>
+          <div class="field-error" id="m-err-sfm"></div>
+        </div>
+        <div class="field">
+          <label for="m-ipt">Chip load / tooth</label>
+          <div class="input-wrap">
+            <input type="number" id="m-ipt" placeholder="0" step="0.0001" min="0.00001" data-unit="ipt" />
+            <span class="unit-tag" data-unit-label="ipt">IPT</span>
+          </div>
+          <div class="field-error" id="m-err-ipt"></div>
+        </div>
+      </div>
     </div>
+
+    <!-- SFM & chip load reference -->
+    
 
     <button class="calc-btn" onclick="mCalculate()">Calculate</button>
 
@@ -5077,28 +5057,6 @@
     </div>
 
     <div class="block">
-      <div class="block-label">Cutting parameters</div>
-      <div class="field-row">
-        <div class="field">
-          <label for="rm-sfm">Surface speed</label>
-          <div class="input-wrap">
-            <input type="number" id="rm-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
-            <span class="unit-tag" data-unit-label="sfm">SFM</span>
-          </div>
-          <div class="field-error" id="rm-err-sfm"></div>
-        </div>
-        <div class="field">
-          <label for="rm-ipr">Feed / rev</label>
-          <div class="input-wrap">
-            <input type="number" id="rm-ipr" placeholder="0" step="0.0001" min="0.0001" data-unit="ipr" />
-            <span class="unit-tag" data-unit-label="ipr">IPR</span>
-          </div>
-          <div class="field-error" id="rm-err-ipr"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="block">
       <div class="block-label block-label-toggle" onclick="toggleSection('rm-lookup-body','rm-lookup-arrow')">
         SFM &amp; feed reference <span class="lbl-line"></span>
         <span class="toggle-arrow open" id="rm-lookup-arrow">&#9658;</span>
@@ -5146,7 +5104,29 @@
           </div>
         </div>
       </div>
+    </div><div class="block">
+      <div class="block-label">Cutting parameters</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="rm-sfm">Surface speed</label>
+          <div class="input-wrap">
+            <input type="number" id="rm-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
+            <span class="unit-tag" data-unit-label="sfm">SFM</span>
+          </div>
+          <div class="field-error" id="rm-err-sfm"></div>
+        </div>
+        <div class="field">
+          <label for="rm-ipr">Feed / rev</label>
+          <div class="input-wrap">
+            <input type="number" id="rm-ipr" placeholder="0" step="0.0001" min="0.0001" data-unit="ipr" />
+            <span class="unit-tag" data-unit-label="ipr">IPR</span>
+          </div>
+          <div class="field-error" id="rm-err-ipr"></div>
+        </div>
+      </div>
     </div>
+
+    
 
     <button class="calc-btn" onclick="rmCalculate()">Calculate</button>
 
@@ -5256,7 +5236,7 @@
       </div>
       <div class="field-row">
         <div class="field">
-          <label for="tp-dia">Major diameter (auto-filled)</label>
+          <label for="tp-dia">Major diameter <span class="lbl-sub">· auto-filled</span></label>
           <div class="input-wrap">
             <input type="number" id="tp-dia" placeholder="0" step="0.001" min="0.001" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -5264,7 +5244,7 @@
           <div class="field-error" id="tp-err-dia"></div>
         </div>
         <div class="field">
-          <label for="tp-pitch">Pitch (TPI for inch / mm/rev)</label>
+          <label for="tp-pitch">Pitch</label>
           <div class="input-wrap">
             <input type="number" id="tp-pitch" placeholder="0" step="0.0001" min="0.001" />
             <span class="unit-tag" id="tp-pitch-unit">TPI</span>
@@ -5281,7 +5261,7 @@
           </select>
         </div>
         <div class="field">
-          <label for="tp-engagement">Thread engagement (% of D)</label>
+          <label for="tp-engagement">Thread engagement <span class="lbl-sub">· % of D</span></label>
           <select id="tp-engagement" onchange="tpUpdateTapDrill()">
             <option value="0.50">50% (light/Al)</option>
             <option value="0.65">65%</option>
@@ -5307,25 +5287,13 @@
           </select>
         </div>
         <div class="field">
-          <label for="tp-depth">Thread depth (in hole)</label>
+          <label for="tp-depth">Thread depth</label>
           <div class="input-wrap">
             <input type="number" id="tp-depth" placeholder="0" step="0.001" min="0.001" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
           </div>
           <div class="field-error" id="tp-err-depth"></div>
         </div>
-      </div>
-    </div>
-
-    <div class="block">
-      <div class="block-label">Cutting parameters</div>
-      <div class="field">
-        <label for="tp-sfm">Surface speed</label>
-        <div class="input-wrap">
-          <input type="number" id="tp-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
-          <span class="unit-tag" data-unit-label="sfm">SFM</span>
-        </div>
-        <div class="field-error" id="tp-err-sfm"></div>
       </div>
     </div>
 
@@ -5398,7 +5366,19 @@
           </div>
         </div>
       </div>
+    </div><div class="block">
+      <div class="block-label">Cutting parameters</div>
+      <div class="field">
+        <label for="tp-sfm">Surface speed</label>
+        <div class="input-wrap">
+          <input type="number" id="tp-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
+          <span class="unit-tag" data-unit-label="sfm">SFM</span>
+        </div>
+        <div class="field-error" id="tp-err-sfm"></div>
+      </div>
     </div>
+
+    
 
     <button class="calc-btn" onclick="tpCalculate()">Calculate</button>
 
@@ -5442,7 +5422,7 @@
       <div class="block-label">Thread &amp; hole geometry</div>
       <div class="field-row">
         <div class="field">
-          <label for="tm-thread">Thread size (auto-fills D &amp; pitch)</label>
+          <label for="tm-thread">Thread size <span class="lbl-sub">· auto-fills D &amp; pitch</span></label>
           <select id="tm-thread" onchange="tmUpdateThread()">
             <option value="">Custom</option>
             <optgroup label="── UNC ──"><option value="0.250|20">1/4-20</option><option value="0.375|16">3/8-16</option><option value="0.500|13">1/2-13</option><option value="0.625|11">5/8-11</option><option value="0.750|10">3/4-10</option><option value="1.000|8">1-8</option></optgroup>
@@ -5468,7 +5448,7 @@
           <div class="field-error" id="tm-err-major"></div>
         </div>
         <div class="field">
-          <label for="tm-pitch">Pitch (TPI)</label>
+          <label for="tm-pitch">Pitch</label>
           <div class="input-wrap">
             <input type="number" id="tm-pitch" placeholder="0" step="0.001" min="0.001" />
             <span class="unit-tag" id="tm-pitch-unit">TPI</span>
@@ -5516,32 +5496,10 @@
           </select>
         </div>
         <div class="field">
-          <label for="tm-max-rpm">Max spindle RPM (optional)</label>
+          <label for="tm-max-rpm">Max RPM <span class="opt-tag">optional</span></label>
           <div class="input-wrap">
             <input type="number" id="tm-max-rpm" placeholder="0" step="1" min="1" style="padding-right:12px;" />
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="block">
-      <div class="block-label">Cutting parameters</div>
-      <div class="field-row">
-        <div class="field">
-          <label for="tm-sfm">Surface speed</label>
-          <div class="input-wrap">
-            <input type="number" id="tm-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
-            <span class="unit-tag" data-unit-label="sfm">SFM</span>
-          </div>
-          <div class="field-error" id="tm-err-sfm"></div>
-        </div>
-        <div class="field">
-          <label for="tm-ipt">Chip load per tooth (IPT)</label>
-          <div class="input-wrap">
-            <input type="number" id="tm-ipt" placeholder="0" step="0.0001" min="0.00001" data-unit="ipt" />
-            <span class="unit-tag" data-unit-label="ipt">IPT</span>
-          </div>
-          <div class="field-error" id="tm-err-ipt"></div>
         </div>
       </div>
     </div>
@@ -5626,7 +5584,29 @@
           </div>
         </div>
       </div>
+    </div><div class="block">
+      <div class="block-label">Cutting parameters</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="tm-sfm">Surface speed</label>
+          <div class="input-wrap">
+            <input type="number" id="tm-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
+            <span class="unit-tag" data-unit-label="sfm">SFM</span>
+          </div>
+          <div class="field-error" id="tm-err-sfm"></div>
+        </div>
+        <div class="field">
+          <label for="tm-ipt">Chip load / tooth</label>
+          <div class="input-wrap">
+            <input type="number" id="tm-ipt" placeholder="0" step="0.0001" min="0.00001" data-unit="ipt" />
+            <span class="unit-tag" data-unit-label="ipt">IPT</span>
+          </div>
+          <div class="field-error" id="tm-err-ipt"></div>
+        </div>
+      </div>
     </div>
+
+    
 
     <button class="calc-btn" onclick="tmCalculate()">Calculate</button>
 
@@ -5678,14 +5658,14 @@
           <div class="field-error" id="fm-err-dia"></div>
         </div>
         <div class="field">
-          <label for="fm-inserts">Insert count (Z)</label>
+          <label for="fm-inserts">Insert count <span class="lbl-sub">· Z</span></label>
           <input type="number" id="fm-inserts" placeholder="0" step="1" min="1" />
           <div class="field-error" id="fm-err-inserts"></div>
         </div>
       </div>
       <div class="field-row">
         <div class="field">
-          <label for="fm-grade">ISO insert grade (optional SFM modifier)</label>
+          <label for="fm-grade">ISO insert grade <span class="opt-tag">optional</span></label>
           <select id="fm-grade">
             <option value="">— None / catalog default —</option>
             <option value="P10">P10 — steel, fine finish (×1.30)</option>
@@ -5720,7 +5700,7 @@
       <div class="block-label">Cut geometry</div>
       <div class="field-row">
         <div class="field">
-          <label for="fm-woc">Width of cut (WOC)</label>
+          <label for="fm-woc">Width of cut <span class="lbl-sub">· WOC</span></label>
           <div class="input-wrap">
             <input type="number" id="fm-woc" placeholder="0" step="0.001" min="0.001" oninput="fmUpdateWoc()" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -5729,7 +5709,7 @@
           <div class="field-error" id="fm-err-woc"></div>
         </div>
         <div class="field">
-          <label for="fm-doc">Axial depth of cut (DOC)</label>
+          <label for="fm-doc">Axial DOC</label>
           <div class="input-wrap">
             <input type="number" id="fm-doc" placeholder="0" step="0.001" min="0.001" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -5738,33 +5718,11 @@
         </div>
       </div>
       <div class="field">
-        <label for="fm-max-rpm">Max spindle RPM (optional)</label>
+        <label for="fm-max-rpm">Max RPM <span class="opt-tag">optional</span></label>
         <div class="input-wrap">
           <input type="number" id="fm-max-rpm" placeholder="0" step="1" min="1" style="padding-right:12px;" />
         </div>
         <div class="rpm-cap-note" id="fm-rpm-cap"></div>
-      </div>
-    </div>
-
-    <div class="block">
-      <div class="block-label">Cutting parameters</div>
-      <div class="field-row">
-        <div class="field">
-          <label for="fm-sfm">Surface speed</label>
-          <div class="input-wrap">
-            <input type="number" id="fm-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
-            <span class="unit-tag" data-unit-label="sfm">SFM</span>
-          </div>
-          <div class="field-error" id="fm-err-sfm"></div>
-        </div>
-        <div class="field">
-          <label for="fm-ipt">Chip load per tooth (target)</label>
-          <div class="input-wrap">
-            <input type="number" id="fm-ipt" placeholder="0" step="0.0001" min="0.00001" data-unit="ipt" />
-            <span class="unit-tag" data-unit-label="ipt">IPT</span>
-          </div>
-          <div class="field-error" id="fm-err-ipt"></div>
-        </div>
       </div>
     </div>
 
@@ -5813,7 +5771,29 @@
           </div>
         </div>
       </div>
+    </div><div class="block">
+      <div class="block-label">Cutting parameters</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="fm-sfm">Surface speed</label>
+          <div class="input-wrap">
+            <input type="number" id="fm-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
+            <span class="unit-tag" data-unit-label="sfm">SFM</span>
+          </div>
+          <div class="field-error" id="fm-err-sfm"></div>
+        </div>
+        <div class="field">
+          <label for="fm-ipt">Chip load / tooth</label>
+          <div class="input-wrap">
+            <input type="number" id="fm-ipt" placeholder="0" step="0.0001" min="0.00001" data-unit="ipt" />
+            <span class="unit-tag" data-unit-label="ipt">IPT</span>
+          </div>
+          <div class="field-error" id="fm-err-ipt"></div>
+        </div>
+      </div>
     </div>
+
+    
 
     <button class="calc-btn" onclick="fmCalculate()">Calculate</button>
 
@@ -5879,7 +5859,7 @@
       </div>
       <div class="field-row">
         <div class="field">
-          <label for="bo-overhang">Bar overhang (stickout)</label>
+          <label for="bo-overhang">Bar overhang <span class="lbl-sub">· stickout</span></label>
           <div class="input-wrap">
             <input type="number" id="bo-overhang" placeholder="0" step="0.001" min="0.001" oninput="boUpdateLD()" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -5901,7 +5881,7 @@
       <div class="block-label">Cut geometry</div>
       <div class="field-row">
         <div class="field">
-          <label for="bo-doc">Depth of cut (radial DOC)</label>
+          <label for="bo-doc">Radial DOC</label>
           <div class="input-wrap">
             <input type="number" id="bo-doc" placeholder="0" step="0.001" min="0.001" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -5909,7 +5889,7 @@
           <div class="field-error" id="bo-err-doc"></div>
         </div>
         <div class="field">
-          <label for="bo-grade">ISO insert grade (optional)</label>
+          <label for="bo-grade">ISO insert grade <span class="opt-tag">optional</span></label>
           <select id="bo-grade">
             <option value="">— None / catalog default —</option>
             <option value="P10">P10 — steel, fine (×1.30)</option>
@@ -5928,35 +5908,13 @@
       </div>
       <div class="field-row">
         <div class="field">
-          <label for="bo-max-rpm">Max spindle RPM (optional)</label>
+          <label for="bo-max-rpm">Max RPM <span class="opt-tag">optional</span></label>
           <div class="input-wrap">
             <input type="number" id="bo-max-rpm" placeholder="0" step="1" min="1" style="padding-right:12px;" />
           </div>
           <div class="rpm-cap-note" id="bo-rpm-cap"></div>
         </div>
         <div class="field"></div>
-      </div>
-    </div>
-
-    <div class="block">
-      <div class="block-label">Cutting parameters</div>
-      <div class="field-row">
-        <div class="field">
-          <label for="bo-sfm">Surface speed</label>
-          <div class="input-wrap">
-            <input type="number" id="bo-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
-            <span class="unit-tag" data-unit-label="sfm">SFM</span>
-          </div>
-          <div class="field-error" id="bo-err-sfm"></div>
-        </div>
-        <div class="field">
-          <label for="bo-ipr">Feed per revolution (IPR)</label>
-          <div class="input-wrap">
-            <input type="number" id="bo-ipr" placeholder="0" step="0.0001" min="0.0001" data-unit="ipr" />
-            <span class="unit-tag" data-unit-label="ipr">IPR</span>
-          </div>
-          <div class="field-error" id="bo-err-ipr"></div>
-        </div>
       </div>
     </div>
 
@@ -5994,7 +5952,29 @@
           </div>
         </div>
       </div>
+    </div><div class="block">
+      <div class="block-label">Cutting parameters</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="bo-sfm">Surface speed</label>
+          <div class="input-wrap">
+            <input type="number" id="bo-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
+            <span class="unit-tag" data-unit-label="sfm">SFM</span>
+          </div>
+          <div class="field-error" id="bo-err-sfm"></div>
+        </div>
+        <div class="field">
+          <label for="bo-ipr">Feed / rev</label>
+          <div class="input-wrap">
+            <input type="number" id="bo-ipr" placeholder="0" step="0.0001" min="0.0001" data-unit="ipr" />
+            <span class="unit-tag" data-unit-label="ipr">IPR</span>
+          </div>
+          <div class="field-error" id="bo-err-ipr"></div>
+        </div>
+      </div>
     </div>
+
+    
 
     <button class="calc-btn" onclick="boCalculate()">Calculate</button>
 
@@ -6043,7 +6023,7 @@
       <div class="block-label">Tool geometry</div>
       <div class="field-row">
         <div class="field">
-          <label for="cf-shank">Shank diameter (max OD)</label>
+          <label for="cf-shank">Shank diameter <span class="lbl-sub">· max OD</span></label>
           <div class="input-wrap">
             <input type="number" id="cf-shank" placeholder="0" step="0.001" min="0.001" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -6051,7 +6031,7 @@
           <div class="field-error" id="cf-err-shank"></div>
         </div>
         <div class="field">
-          <label for="cf-tip">Tip diameter (0 for pointed)</label>
+          <label for="cf-tip">Tip diameter <span class="lbl-sub">· 0 = pointed</span></label>
           <div class="input-wrap">
             <input type="number" id="cf-tip" placeholder="0" step="0.001" min="0" data-unit="len" />
             <span class="unit-tag" data-unit-label="len">IN</span>
@@ -6093,33 +6073,11 @@
           <div class="field-error" id="cf-err-depth"></div>
         </div>
         <div class="field">
-          <label for="cf-max-rpm">Max spindle RPM (optional)</label>
+          <label for="cf-max-rpm">Max RPM <span class="opt-tag">optional</span></label>
           <div class="input-wrap">
             <input type="number" id="cf-max-rpm" placeholder="0" step="1" min="1" style="padding-right:12px;" />
           </div>
           <div class="rpm-cap-note" id="cf-rpm-cap"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="block">
-      <div class="block-label">Cutting parameters</div>
-      <div class="field-row">
-        <div class="field">
-          <label for="cf-sfm">Surface speed</label>
-          <div class="input-wrap">
-            <input type="number" id="cf-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
-            <span class="unit-tag" data-unit-label="sfm">SFM</span>
-          </div>
-          <div class="field-error" id="cf-err-sfm"></div>
-        </div>
-        <div class="field">
-          <label for="cf-ipt">Chip load per tooth (IPT)</label>
-          <div class="input-wrap">
-            <input type="number" id="cf-ipt" placeholder="0" step="0.0001" min="0.00001" data-unit="ipt" />
-            <span class="unit-tag" data-unit-label="ipt">IPT</span>
-          </div>
-          <div class="field-error" id="cf-err-ipt"></div>
         </div>
       </div>
     </div>
@@ -6158,7 +6116,29 @@
           </div>
         </div>
       </div>
+    </div><div class="block">
+      <div class="block-label">Cutting parameters</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="cf-sfm">Surface speed</label>
+          <div class="input-wrap">
+            <input type="number" id="cf-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
+            <span class="unit-tag" data-unit-label="sfm">SFM</span>
+          </div>
+          <div class="field-error" id="cf-err-sfm"></div>
+        </div>
+        <div class="field">
+          <label for="cf-ipt">Chip load / tooth</label>
+          <div class="input-wrap">
+            <input type="number" id="cf-ipt" placeholder="0" step="0.0001" min="0.00001" data-unit="ipt" />
+            <span class="unit-tag" data-unit-label="ipt">IPT</span>
+          </div>
+          <div class="field-error" id="cf-err-ipt"></div>
+        </div>
+      </div>
     </div>
+
+    
 
     <button class="calc-btn" onclick="cfCalculate()">Calculate</button>
 
@@ -14669,11 +14649,18 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       cursor: pointer;
       z-index: 9000;
       display: flex; align-items: center; justify-content: center;
-      transition: transform 0.15s ease;
+      transition: transform 0.25s ease, opacity 0.25s ease;
       -webkit-tap-highlight-color: transparent;
     }
     #ai-fab:active { transform: scale(0.94); }
     #ai-fab svg { width: 26px; height: 26px; }
+    /* Auto-hide while scrolling down or while an input is focused, so the FAB
+       never sits on top of the field/content the user is working with. */
+    #ai-fab.ai-fab-hidden {
+      transform: translateY(140px) scale(0.85);
+      opacity: 0;
+      pointer-events: none;
+    }
 
     /* --- Drawer --- */
     #ai-drawer {
@@ -15011,6 +14998,36 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       fab.addEventListener('click', openDrawer);
       closeBtn.addEventListener('click', closeDrawer);
       backdrop.addEventListener('click', closeDrawer);
+
+      /* Keep the FAB out of the way: hide it while scrolling down or while an
+         input is focused (so it never covers the field/content in use); bring
+         it back on scroll-up or when scrolling stops. Never hide while the
+         drawer is open. */
+      var fabLastY = 0, fabIdleTimer = null, fabInputFocused = false;
+      function fabShow() { if (!fabInputFocused) fab.classList.remove('ai-fab-hidden'); }
+      function fabHide() { fab.classList.add('ai-fab-hidden'); }
+      window.addEventListener('scroll', function() {
+        if (drawer.classList.contains('open')) return;
+        var y = window.scrollY || window.pageYOffset || 0;
+        if (y > fabLastY + 6 && y > 180) fabHide();
+        else if (y < fabLastY - 6) fabShow();
+        fabLastY = y;
+        clearTimeout(fabIdleTimer);
+        fabIdleTimer = setTimeout(fabShow, 800);
+      }, { passive: true });
+      /* Hide while typing in any calculator field (not the chat input itself) */
+      document.addEventListener('focusin', function(e) {
+        if (e.target && e.target.closest && e.target.closest('#ai-drawer')) return;
+        if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) {
+          fabInputFocused = true; fabHide();
+        }
+      });
+      document.addEventListener('focusout', function(e) {
+        if (e.target && e.target.closest && e.target.closest('#ai-drawer')) return;
+        if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) {
+          fabInputFocused = false; setTimeout(fabShow, 200);
+        }
+      });
 
       /* Auto-resize textarea up to max-height */
       inputEl.addEventListener('input', function() {
