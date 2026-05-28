@@ -2832,10 +2832,37 @@
 
     <!-- Hole depth for cycle time -->
     <div class="field">
-      <label for="lt-drill-depth">Hole depth (optional — for cycle time)</label>
+      <label for="lt-drill-depth">Hole depth <span class="opt-tag">optional</span> <span class="lbl-sub">· for cycle time</span></label>
       <div class="input-wrap">
         <input type="number" id="lt-drill-depth" placeholder="0.000" step="0.001" min="0.001" style="padding-right:12px;" />
         <span class="unit-tag" id="lt-unit-tag-drilldepth">IN</span>
+      </div>
+    </div>
+
+    <!-- Standard drill size (auto-fills the diameter field up top) -->
+    <div class="field">
+      <label for="lt-drill-size-picker">Standard size <span class="lbl-sub">· auto-fills Ø</span></label>
+      <select id="lt-drill-size-picker" onchange="ltDrillPickSize()">
+        <option value="">Custom — enter diameter above</option>
+      </select>
+    </div>
+
+    <!-- Point angle (drives tip allowance in cycle time) -->
+    <div class="field">
+      <label>Point angle</label>
+      <div class="seg-toggle cols-3">
+        <button class="seg-btn active" data-angle="118" onclick="ltDrillSetAngle(this)">118° standard</button>
+        <button class="seg-btn"        data-angle="135" onclick="ltDrillSetAngle(this)">135° split point</button>
+        <button class="seg-btn"        data-angle="90"  onclick="ltDrillSetAngle(this)">90° flat</button>
+      </div>
+    </div>
+
+    <!-- Peck depth -->
+    <div class="field">
+      <label for="lt-drill-peck">Peck depth <span class="opt-tag">optional</span> <span class="lbl-sub">· 0 = none</span></label>
+      <div class="input-wrap">
+        <input type="number" id="lt-drill-peck" placeholder="0.000" step="0.001" min="0" style="padding-right:12px;" />
+        <span class="unit-tag" id="lt-unit-tag-drillpeck">IN</span>
       </div>
     </div>
 
@@ -2989,6 +3016,16 @@
             <option value="carbide_coated">Solid carbide — coated (TiN, TiAlN)</option>
           </select>
         </div>
+      </div>
+
+      <div class="field" style="margin-bottom:0;">
+        <label for="lt-drill-coolant">Coolant</label>
+        <select id="lt-drill-coolant" onchange="onDrillLookupChange()">
+          <option value="flood">Flood coolant (baseline)</option>
+          <option value="through">Through-spindle / HPC (+15%)</option>
+          <option value="mist">Mist / MQL (−10%)</option>
+          <option value="dry">Dry (−25%)</option>
+        </select>
       </div>
 
       <button class="drill-apply" id="lt-drill-apply" onclick="applyDrillLookup()" disabled>Apply</button>
@@ -6971,11 +7008,30 @@ function runMode_drilling(diameter, sfm, ipr, maxRpm, capNoteEl) {
 
   var infoLines = [];
 
-  if (isFinite(depthRaw) && depthRaw > 0 && displayIpm > 0) {
-    var cycleMin = depthRaw / displayIpm;
-    var cycleSec = cycleMin * 60;
-    var drillDepthDisp = isMetric() ? (depthRaw * 25.4).toFixed(2) + ' mm' : depthRaw.toFixed(3) + '"';
-    infoLines.push('Hole depth: <span class="val">' + drillDepthDisp + '</span>  \u2502  Cycle time/hole: <span class="val">' + cycleSec.toFixed(1) + ' sec</span> (' + cycleMin.toFixed(3) + ' min)');
+  /* Peck depth + point angle drive the richer DrillCore advisory (tip
+     allowance, peck strategy, cycle time, L/D) — shared with the mill mode. */
+  var peckRaw = parseFloat(document.getElementById('lt-drill-peck').value);
+  if (isMetric() && isFinite(peckRaw)) peckRaw /= 25.4;
+  if (!isFinite(peckRaw) || peckRaw < 0) peckRaw = 0;
+
+  var dcWarn = [];
+  if (isFinite(depthRaw) && depthRaw > 0 && displayIpm > 0 && typeof DrillCore === 'function') {
+    var dc = DrillCore({
+      sfm: sfm, dia: diameter, ipr: ipr, holeDepth: depthRaw,
+      peckDepth: peckRaw, pointAngle: ltDrillPointAngle, maxRpm: maxRpm,
+      drillType: (document.getElementById('lt-drill-tool').value || 'hss')
+    });
+    dcWarn = dc.warnings || [];
+    var inch = function(v) { return isMetric() ? (v * 25.4).toFixed(2) + ' mm' : v.toFixed(3) + '"'; };
+    var drillDepthDisp = inch(depthRaw);
+    infoLines.push('Hole depth: <span class="val">' + drillDepthDisp + '</span>  \u2502  Cycle time/hole: <span class="val">' + dc.cycleTimeSec.toFixed(1) + ' sec</span>');
+    infoLines.push('Drill tip allowance (' + ltDrillPointAngle + '\u00b0): <span class="val">' + inch(dc.tipLen) + '</span>  \u2502  Effective depth: <span class="val">' + inch(dc.effectiveDepth) + '</span>');
+    if (dc.peckActive) {
+      infoLines.push('Peck: <span class="val">' + dc.peckCount + ' pecks</span> @ <span class="val">' + inch(peckRaw) + '</span>/peck');
+    } else {
+      infoLines.push('Peck: <span class="val">single pass</span> (no peck)');
+    }
+    infoLines.push('Hole depth / D ratio: <span class="val">' + dc.ldRatio.toFixed(1) + '</span>');
     infoLines.push('Penetration rate: <span class="val">' + U.fmtFrate(displayIpm) + '</span>  \u2502  Feed: <span class="val">' + U.fmtFeed(ipr) + '</span>');
   }
 
@@ -6987,6 +7043,13 @@ function runMode_drilling(diameter, sfm, ipr, maxRpm, capNoteEl) {
   drillCycleLine.innerHTML = infoLines.join('<br>');
   drillInfoLine.innerHTML  = '';
   drillPanel.style.display = 'block';
+
+  /* Merge peck/L-D advisories from DrillCore into the warning box */
+  if (dcWarn.length) {
+    var existingWarn = (result.warnings && result.warnings.length) ? result.warnings.join(' ') : '';
+    warnText.textContent = (existingWarn ? existingWarn + ' ' : '') + dcWarn.join(' ');
+    warnBox.style.display = 'block';
+  }
 
   var resultsEl = document.getElementById('lt-results');
   resultsEl.classList.add('visible');
@@ -8954,6 +9017,49 @@ function applyDrillIPR(val) {
 }
 
 /* ── Drill lookup UI handlers ── */
+/* Lathe drilling — standard-size picker + point-angle toggle (ported from the
+   mill drilling mode so both modes share the same options). */
+var ltDrillPointAngle = 118;
+function ltDrillSetAngle(btn) {
+  document.querySelectorAll('#lt-drilling-inputs .seg-toggle .seg-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  ltDrillPointAngle = parseInt(btn.getAttribute('data-angle'));
+}
+function ltDrillInitSizePicker() {
+  var sel = document.getElementById('lt-drill-size-picker');
+  if (!sel || sel.children.length > 1) return;
+  if (typeof DRILL_SIZES === 'undefined') return;
+  var groups = {};
+  DRILL_SIZES.forEach(function(d){ (groups[d.grp] = groups[d.grp] || []).push(d); });
+  ['Number','Letter','Fractional','Metric'].forEach(function(g){
+    if (!groups[g]) return;
+    var og = document.createElement('optgroup');
+    og.label = '── ' + g + ' ──';
+    groups[g].forEach(function(d){
+      var o = document.createElement('option');
+      o.value = d.dec.toString();
+      o.textContent = d.label + '  (' + d.dec.toFixed(4) + '")';
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+function ltDrillPickSize() {
+  var sel = document.getElementById('lt-drill-size-picker');
+  var v = parseFloat(sel.value);
+  if (!isFinite(v) || v <= 0) return;
+  var di = document.getElementById('lt-diameter');
+  di.value = isMetric() ? parseFloat((v * 25.4).toFixed(3)) : v;
+  di.classList.remove('error');
+  var err = document.getElementById('lt-err-diameter');
+  if (err) err.textContent = '';
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', ltDrillInitSizePicker);
+} else {
+  ltDrillInitSizePicker();
+}
+
 /* Drill SFM fallback — when a tool class is flagged [0,0] ("not applicable")
    for a material, derive a conservative range from the best available tool
    class in the same entry rather than dead-ending. Factors approximate drilling
@@ -9022,7 +9128,10 @@ function applyDrillLookup() {
   }
 
   /* SFM: midpoint of range → write to field (convert to m/min in metric mode) */
-  var sfmMid = Math.round((sfmRange[0] + sfmRange[1]) / 2);
+  var ltDcoolEl = document.getElementById('lt-drill-coolant');
+  var ltDcool = (ltDcoolEl && typeof DRILL_COOLANT !== 'undefined' && DRILL_COOLANT[ltDcoolEl.value]) ? DRILL_COOLANT[ltDcoolEl.value] : null;
+  var ltCoolMult = ltDcool ? ltDcool.mult : 1.0;
+  var sfmMid = Math.round(((sfmRange[0] + sfmRange[1]) / 2) * ltCoolMult);
   var sfmDisp = isMetric() ? parseFloat((sfmMid * 0.3048).toFixed(1)) : sfmMid;
   document.getElementById('lt-sfm').value = sfmDisp;
   document.getElementById('lt-sfm').classList.remove('error');
