@@ -1,7 +1,7 @@
 /* CNC Calculator — Service Worker
    v7 — bulletproof offline + diagnostic message endpoint */
 
-var VERSION = 'v16';
+var VERSION = 'v17';
 var CACHE = 'cnc-calc-' + VERSION;
 
 var CRITICAL = [

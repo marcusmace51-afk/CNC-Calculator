@@ -4741,58 +4741,6 @@
       </div>
     </div>
 
-    <!-- Hole parameters -->
-    <div class="block">
-      <div class="block-label">Hole parameters</div>
-      <div class="field-row">
-        <div class="field">
-          <label for="d-depth">Hole depth</label>
-          <div class="input-wrap">
-            <input type="number" id="d-depth" placeholder="0" step="0.001" min="0.001" data-unit="len" />
-            <span class="unit-tag" data-unit-label="len">IN</span>
-          </div>
-          <div class="field-error" id="d-err-depth"></div>
-        </div>
-        <div class="field">
-          <label for="d-peck">Peck depth <span class="opt-tag">optional</span> <span class="lbl-sub">· 0 = none</span></label>
-          <div class="input-wrap">
-            <input type="number" id="d-peck" placeholder="0" step="0.001" min="0" data-unit="len" />
-            <span class="unit-tag" data-unit-label="len">IN</span>
-          </div>
-        </div>
-      </div>
-      <div class="field">
-        <label for="d-max-rpm">Max RPM <span class="opt-tag">optional</span></label>
-        <div class="input-wrap">
-          <input type="number" id="d-max-rpm" placeholder="0" step="1" min="1" style="padding-right:12px;" />
-        </div>
-        <div class="rpm-cap-note" id="d-rpm-cap"></div>
-      </div>
-    </div>
-
-    <!-- Cutting parameters -->
-    <div class="block">
-      <div class="block-label">Cutting parameters</div>
-      <div class="field-row">
-        <div class="field">
-          <label for="d-sfm">Surface speed</label>
-          <div class="input-wrap">
-            <input type="number" id="d-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
-            <span class="unit-tag" data-unit-label="sfm">SFM</span>
-          </div>
-          <div class="field-error" id="d-err-sfm"></div>
-        </div>
-        <div class="field">
-          <label for="d-ipr">Feed / rev</label>
-          <div class="input-wrap">
-            <input type="number" id="d-ipr" placeholder="0" step="0.0001" min="0.0001" data-unit="ipr" />
-            <span class="unit-tag" data-unit-label="ipr">IPR</span>
-          </div>
-          <div class="field-error" id="d-err-ipr"></div>
-        </div>
-      </div>
-    </div>
-
     <!-- SFM & feed reference -->
     <div class="block">
       <div class="block-label block-label-toggle" onclick="toggleSection('d-lookup-body','d-lookup-arrow')">
@@ -4916,6 +4864,58 @@
     </div>
 
     <button class="calc-btn" onclick="dCalculate()">Calculate</button>
+
+    <!-- Cutting parameters -->
+    <div class="block">
+      <div class="block-label">Cutting parameters</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="d-sfm">Surface speed</label>
+          <div class="input-wrap">
+            <input type="number" id="d-sfm" placeholder="0" step="1" min="1" data-unit="sfm" />
+            <span class="unit-tag" data-unit-label="sfm">SFM</span>
+          </div>
+          <div class="field-error" id="d-err-sfm"></div>
+        </div>
+        <div class="field">
+          <label for="d-ipr">Feed / rev</label>
+          <div class="input-wrap">
+            <input type="number" id="d-ipr" placeholder="0" step="0.0001" min="0.0001" data-unit="ipr" />
+            <span class="unit-tag" data-unit-label="ipr">IPR</span>
+          </div>
+          <div class="field-error" id="d-err-ipr"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hole parameters -->
+    <div class="block">
+      <div class="block-label">Hole parameters</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="d-depth">Hole depth</label>
+          <div class="input-wrap">
+            <input type="number" id="d-depth" placeholder="0" step="0.001" min="0.001" data-unit="len" />
+            <span class="unit-tag" data-unit-label="len">IN</span>
+          </div>
+          <div class="field-error" id="d-err-depth"></div>
+        </div>
+        <div class="field">
+          <label for="d-peck">Peck depth <span class="opt-tag">optional</span> <span class="lbl-sub">· 0 = none</span></label>
+          <div class="input-wrap">
+            <input type="number" id="d-peck" placeholder="0" step="0.001" min="0" data-unit="len" />
+            <span class="unit-tag" data-unit-label="len">IN</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="d-max-rpm">Max RPM <span class="opt-tag">optional</span></label>
+        <div class="input-wrap">
+          <input type="number" id="d-max-rpm" placeholder="0" step="1" min="1" style="padding-right:12px;" />
+        </div>
+        <div class="rpm-cap-note" id="d-rpm-cap"></div>
+      </div>
+    </div>
 
     <!-- Drilling results -->
     <div class="results-panel" id="d-results">
