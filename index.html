@@ -14695,75 +14695,151 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       color: var(--muted, #9b9690); font-size: 22px; line-height: 1;
       cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
+    /* ─── Account bar (visible only when signed in) ──────────────────── */
     #ai-drawer .ai-acct {
-      flex-shrink: 0; padding: 7px 16px;
+      flex-shrink: 0;
+      padding: 9px 14px;
       border-bottom: 1px solid var(--border, #2e2e2a);
-      font-family: var(--mono, ui-monospace, monospace); font-size: 11px;
+      background: rgba(255, 255, 255, .015);
+      font-family: var(--sans, system-ui, sans-serif);
+      font-size: 13px;
       color: var(--muted, #9b9690);
-      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
     #ai-drawer .ai-acct[hidden] { display: none; }
-    #ai-drawer .ai-acct .ai-acct-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #ai-drawer .ai-acct a {
-      color: var(--accent, #c8a84b); text-decoration: none; cursor: pointer;
-      flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    #ai-drawer .ai-acct-user {
+      display: flex; align-items: center; gap: 10px;
+      min-width: 0; flex: 1 1 auto;
     }
-    #ai-drawer .ai-acct a:hover { text-decoration: underline; }
+    #ai-drawer .ai-acct-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--accent, #c8a84b); color: #1a1812;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--mono, ui-monospace, monospace);
+      font-weight: 600; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0;
+      flex-shrink: 0;
+    }
+    #ai-drawer .ai-acct-email {
+      color: var(--text, #e2ddd4);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      min-width: 0; font-size: 13px;
+    }
+    #ai-drawer .ai-acct-signout {
+      background: transparent; border: 0;
+      color: var(--muted, #9b9690);
+      font: inherit; font-size: 12px;
+      cursor: pointer; padding: 5px 10px; border-radius: 5px;
+      flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+      transition: color .12s, background .12s;
+    }
+    #ai-drawer .ai-acct-signout:hover {
+      color: var(--text, #e2ddd4);
+      background: rgba(255, 255, 255, .05);
+    }
 
-    /* Inline magic-link sign-in card, shown inside the chat drawer when the
-       user isn't signed in. Keeps the entire flow in-app. */
+    /* ─── Inline magic-link sign-in card ──────────────────────────────
+       Renders inside the chat drawer when signed-out. Keeps the entire
+       sign-in/sign-up flow in-app — never navigates away. */
     #ai-drawer .ai-signin {
-      padding: 6px 2px;
+      padding: 18px 4px 8px;
       font-family: var(--sans, system-ui, sans-serif);
+      max-width: 360px; margin: 0 auto;
+    }
+    #ai-drawer .ai-signin-icon {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(200, 168, 75, .12);
+      border: 1px solid rgba(200, 168, 75, .35);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+      color: var(--accent, #c8a84b);
+    }
+    #ai-drawer .ai-signin-icon.ok {
+      background: rgba(95, 168, 95, .14);
+      border-color: rgba(95, 168, 95, .4);
+      color: #82c882;
+    }
+    #ai-drawer .ai-signin-icon svg {
+      width: 22px; height: 22px;
+      stroke: currentColor; fill: none; stroke-width: 1.8;
+      stroke-linecap: round; stroke-linejoin: round;
     }
     #ai-drawer .ai-signin-title {
       font-family: var(--mono, ui-monospace, monospace);
       font-size: 13px; font-weight: 600;
-      color: var(--accent, #c8a84b);
-      letter-spacing: .04em;
-      margin: 2px 0 8px;
+      color: var(--text, #e2ddd4);
+      letter-spacing: .07em; text-transform: uppercase;
+      text-align: center;
+      margin: 0 0 8px;
     }
     #ai-drawer .ai-signin-sub {
       color: var(--muted, #9b9690);
-      font-size: 13.5px; line-height: 1.5;
-      margin: 0 0 14px;
+      font-size: 13.5px; line-height: 1.55;
+      text-align: center;
+      margin: 0 0 18px;
+      padding: 0 6px;
     }
-    #ai-drawer .ai-signin-form { display: flex; flex-direction: column; gap: 8px; }
+    #ai-drawer .ai-signin-sub b { color: var(--text, #e2ddd4); font-weight: 600; }
+    #ai-drawer .ai-signin-form { display: flex; flex-direction: column; gap: 9px; }
     #ai-drawer .ai-signin-form input[type=email] {
       background: var(--panel2, #1f1f1c);
       border: 1px solid var(--border, #2e2e2a);
       color: var(--text, #e2ddd4);
-      border-radius: 6px; padding: 12px 13px;
+      border-radius: 7px; padding: 13px 14px;
       font: inherit; font-size: 15px; outline: none;
-      transition: border-color .12s;
+      transition: border-color .12s, box-shadow .12s;
     }
     #ai-drawer .ai-signin-form input[type=email]:focus {
-      border-color: var(--accent-dim, #8f7733);
+      border-color: var(--accent, #c8a84b);
+      box-shadow: 0 0 0 3px rgba(200, 168, 75, .15);
     }
     #ai-drawer .ai-signin-form input[type=email]:disabled { opacity: .6; }
     #ai-drawer .ai-signin-form button {
       background: var(--accent, #c8a84b); color: #1a1812;
-      border: 0; border-radius: 6px; padding: 12px;
+      border: 0; border-radius: 7px; padding: 13px;
       font-family: var(--mono, ui-monospace, monospace);
-      font-size: 13px; font-weight: 600; letter-spacing: .02em;
-      cursor: pointer; transition: opacity .12s;
+      font-size: 13px; font-weight: 600; letter-spacing: .03em;
+      cursor: pointer; transition: opacity .12s, transform .05s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     }
-    #ai-drawer .ai-signin-form button:hover { opacity: .92; }
-    #ai-drawer .ai-signin-form button:disabled { opacity: .5; cursor: default; }
+    #ai-drawer .ai-signin-form button:hover { opacity: .94; }
+    #ai-drawer .ai-signin-form button:active { transform: translateY(1px); }
+    #ai-drawer .ai-signin-form button:disabled { opacity: .55; cursor: default; transform: none; }
+    #ai-drawer .ai-spin {
+      display: inline-block; width: 12px; height: 12px;
+      border: 2px solid rgba(26, 24, 18, .3);
+      border-top-color: #1a1812;
+      border-radius: 50%;
+      animation: ai-spin .6s linear infinite;
+    }
+    @keyframes ai-spin { to { transform: rotate(360deg); } }
+    #ai-drawer .ai-signin-foot {
+      margin-top: 14px;
+      color: var(--muted, #9b9690);
+      font-size: 11.5px; line-height: 1.5;
+      text-align: center;
+      padding: 0 6px;
+    }
     #ai-drawer .ai-signin-msg {
-      margin-top: 10px; font-size: 12.5px; line-height: 1.45;
-      padding: 9px 11px; border-radius: 6px; display: none;
+      margin-top: 12px; font-size: 13px; line-height: 1.5;
+      padding: 11px 13px; border-radius: 7px;
     }
-    #ai-drawer .ai-signin-msg.show { display: block; }
     #ai-drawer .ai-signin-msg.err {
       background: rgba(200, 75, 75, .12);
       border: 1px solid rgba(200, 75, 75, .4);
       color: #e9b6b6;
     }
-    #ai-drawer .ai-signin-msg.ok {
-      background: rgba(95, 168, 95, .1);
-      border: 1px solid rgba(95, 168, 95, .4);
-      color: #bfe0bf;
+    #ai-drawer .ai-signin-resend {
+      display: block; margin: 16px auto 0;
+      background: transparent; border: 0;
+      color: var(--muted, #9b9690); font: inherit; font-size: 12.5px;
+      cursor: pointer; padding: 6px 10px; border-radius: 5px;
+      -webkit-tap-highlight-color: transparent;
+      transition: color .12s, background .12s;
+    }
+    #ai-drawer .ai-signin-resend:hover {
+      color: var(--text, #e2ddd4);
+      background: rgba(255, 255, 255, .04);
     }
 
     #ai-drawer .ai-messages {
@@ -15123,26 +15199,24 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       var AUTH_REQUIRED = true;
       var auth = window.CNCAuth || null;
 
-      /* Render the account bar: who's signed in + a sign-out / sign-in link. */
+      /* Render the account bar. Only visible when signed in — the empty-state
+         sign-in form is the primary CTA when signed out, so a redundant
+         "not signed in" bar would just add clutter. */
       function renderAcct(email) {
         if (!acctEl) return;
-        if (email) {
-          acctEl.hidden = false;
-          acctEl.innerHTML =
-            '<span class="ai-acct-who">Signed in &middot; ' + escapeHTML(email) + '</span>' +
-            '<a id="ai-signout" role="button" tabindex="0">Sign out</a>';
-          var so = document.getElementById('ai-signout');
-          if (so) so.addEventListener('click', function () {
-            if (auth) auth.signOut();
-          });
-        } else if (AUTH_REQUIRED) {
-          acctEl.hidden = false;
-          acctEl.innerHTML =
-            '<span class="ai-acct-who">Not signed in</span>' +
-            '<a href="' + (auth ? auth.SIGNIN_URL : './signin.html') + '">Sign in</a>';
-        } else {
-          acctEl.hidden = true;
-        }
+        if (!email) { acctEl.hidden = true; acctEl.innerHTML = ''; return; }
+        var initial = escapeHTML((email.charAt(0) || '?').toUpperCase());
+        var safeEmail = escapeHTML(email);
+        acctEl.hidden = false;
+        acctEl.innerHTML =
+          '<div class="ai-acct-user">' +
+            '<span class="ai-acct-avatar" aria-hidden="true">' + initial + '</span>' +
+            '<span class="ai-acct-email" title="' + safeEmail + '">' + safeEmail + '</span>' +
+          '</div>' +
+          '<button class="ai-acct-signout" id="ai-signout" type="button" ' +
+            'aria-label="Sign out of ' + safeEmail + '">Sign out</button>';
+        var so = document.getElementById('ai-signout');
+        if (so) so.addEventListener('click', function () { if (auth) auth.signOut(); });
       }
       /* Restore the messages area to its initial empty state (suggestion chips)
          OR to the inline sign-in form, depending on auth state. Called when
@@ -15156,46 +15230,54 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         }
       }
 
+      /* SVG icons for sign-in card (envelope / checkmark). */
+      var ICON_MAIL  = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<rect x="3" y="5" width="18" height="14" rx="2"></rect>' +
+        '<path d="m3 7 9 6 9-6"></path></svg>';
+      var ICON_CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M5 12.5 10 17.5 19 7.5"></path></svg>';
+
       /* Render the magic-link sign-in form INSIDE the chat drawer's messages
          area, so the user never leaves the calculator to authenticate. */
       function showSignInForm() {
         messagesEl.innerHTML =
-          '<div class="ai-signin">' +
-            '<div class="ai-signin-title">Sign in to use the assistant</div>' +
-            '<div class="ai-signin-sub">The calculator is free — the AI ' +
-              'assistant requires a free account. We\'ll email you a one-time ' +
-              'sign-in link, no password needed.</div>' +
+          '<div class="ai-signin" id="ai-signin-card">' +
+            '<div class="ai-signin-icon">' + ICON_MAIL + '</div>' +
+            '<div class="ai-signin-title">Sign in to continue</div>' +
+            '<div class="ai-signin-sub">The calculator is free. Ask the Machinist ' +
+              'needs a free account &mdash; enter your email and we\'ll send a ' +
+              'one-time sign-in link.</div>' +
             '<form class="ai-signin-form" id="ai-signin-form" autocomplete="on" novalidate>' +
               '<input id="ai-signin-email" type="email" inputmode="email" ' +
                 'autocomplete="email" placeholder="you@shop.com" required>' +
               '<button id="ai-signin-submit" type="submit">Send sign-in link</button>' +
             '</form>' +
-            '<div id="ai-signin-msg" class="ai-signin-msg" role="status" aria-live="polite"></div>' +
+            '<div id="ai-signin-msg" role="status" aria-live="polite"></div>' +
+            '<div class="ai-signin-foot">No password. New here? Your account is created automatically.</div>' +
           '</div>';
         var form    = document.getElementById('ai-signin-form');
         var emailIn = document.getElementById('ai-signin-email');
         var sub     = document.getElementById('ai-signin-submit');
         var msg     = document.getElementById('ai-signin-msg');
-        function showMsg(kind, html) {
-          msg.className = 'ai-signin-msg show ' + kind;
+
+        function showErr(html) {
+          msg.className = 'ai-signin-msg err';
           msg.innerHTML = html;
         }
+
         form.addEventListener('submit', async function (e) {
           e.preventDefault();
           var em = (emailIn.value || '').trim();
-          if (!em || em.indexOf('@') < 1) { showMsg('err', 'Please enter a valid email.'); return; }
-          if (!auth) { showMsg('err', 'Sign-in is unavailable right now (offline?).'); return; }
-          sub.disabled = true; sub.textContent = 'Sending…';
-          msg.className = 'ai-signin-msg';
+          if (!em || em.indexOf('@') < 1) { showErr('Please enter a valid email address.'); return; }
+          if (!auth) { showErr('Sign-in is unavailable right now (offline?).'); return; }
+          sub.disabled = true;
+          sub.innerHTML = '<span class="ai-spin" aria-hidden="true"></span>Sending&hellip;';
+          msg.className = ''; msg.innerHTML = '';
           try {
             await auth.sendMagicLink(em);
-            showMsg('ok',
-              'Check your inbox — sign-in link sent to <b>' + escapeHTML(em) + '</b>.<br>' +
-              'Open it <b>on this device</b>. You\'ll come back here already signed in.');
-            sub.textContent = 'Link sent';
-            emailIn.disabled = true;
+            showSignInSuccess(em);
           } catch (err) {
-            showMsg('err', 'Could not send the link: ' +
+            showErr('Could not send the link: ' +
               escapeHTML(String(err && err.message || err)));
             sub.disabled = false;
             sub.textContent = 'Send sign-in link';
@@ -15203,6 +15285,20 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         });
         /* Tiny delay so iOS keyboards don't pop up during the open animation */
         setTimeout(function () { try { emailIn.focus({ preventScroll: true }); } catch (e) {} }, 320);
+      }
+
+      /* Swap the sign-in card to the "check your inbox" success state. */
+      function showSignInSuccess(email) {
+        messagesEl.innerHTML =
+          '<div class="ai-signin" id="ai-signin-card">' +
+            '<div class="ai-signin-icon ok">' + ICON_CHECK + '</div>' +
+            '<div class="ai-signin-title">Check your inbox</div>' +
+            '<div class="ai-signin-sub">Sign-in link sent to <b>' + escapeHTML(email) + '</b>.<br>' +
+              'Open it <b>on this device</b> &mdash; you\'ll come back here already signed in.</div>' +
+            '<button class="ai-signin-resend" type="button" id="ai-signin-resend">Use a different email</button>' +
+          '</div>';
+        var r = document.getElementById('ai-signin-resend');
+        if (r) r.addEventListener('click', showSignInForm);
       }
 
       /* Auth state listener: render the account bar AND, if the user is on the

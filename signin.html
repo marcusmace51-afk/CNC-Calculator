@@ -34,49 +34,65 @@
     min-height:100%;
   }
   .card{
-    width:100%; max-width:380px; background:var(--panel);
+    width:100%; max-width:400px; background:var(--panel);
     border:1px solid var(--line); border-radius:12px;
-    padding:28px 26px 24px; box-shadow:0 12px 40px rgba(0,0,0,.45);
+    padding:30px 28px 26px; box-shadow:0 12px 40px rgba(0,0,0,.45);
   }
   .brand{
     font-family:"IBM Plex Mono",monospace; font-weight:600; letter-spacing:.04em;
-    color:var(--accent); font-size:13px; text-transform:uppercase; margin-bottom:18px;
-    display:flex; align-items:center; gap:9px;
+    color:var(--accent); font-size:12px; text-transform:uppercase; margin-bottom:20px;
+    display:flex; align-items:center; gap:9px; justify-content:center;
   }
-  .brand svg{width:20px;height:20px;flex:0 0 auto;}
-  h1{font-size:21px; font-weight:500; margin:0 0 6px; line-height:1.25;}
-  .sub{color:var(--muted); font-size:14px; margin:0 0 22px; line-height:1.45;}
-  label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px;
-    text-transform:uppercase; letter-spacing:.05em; font-family:"IBM Plex Mono",monospace;}
+  .brand svg{width:18px;height:18px;flex:0 0 auto;}
+  .icon-circle{
+    width:52px;height:52px;border-radius:50%;
+    background:rgba(200,168,75,.12);border:1px solid rgba(200,168,75,.35);
+    color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 16px;
+  }
+  .icon-circle.ok{background:rgba(95,168,95,.14);border-color:rgba(95,168,95,.4);color:#82c882;}
+  .icon-circle svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  h1{font-size:18px; font-weight:600; margin:0 0 8px; line-height:1.3;
+    font-family:"IBM Plex Mono",monospace; letter-spacing:.05em;
+    text-transform:uppercase; text-align:center;}
+  .sub{color:var(--muted); font-size:14px; margin:0 0 22px; line-height:1.5;
+    text-align:center; padding:0 4px;}
+  .sub b{color:var(--text);font-weight:600;}
   input[type=email]{
     width:100%; background:var(--panel2); border:1px solid var(--line);
-    color:var(--text); border-radius:8px; padding:13px 14px; font-size:16px;
-    font-family:inherit; outline:none; transition:border-color .15s;
+    color:var(--text); border-radius:8px; padding:14px 15px; font-size:16px;
+    font-family:inherit; outline:none;
+    transition:border-color .12s, box-shadow .12s;
   }
-  input[type=email]:focus{border-color:var(--accent-dim);}
-  button{
-    width:100%; margin-top:16px; background:var(--accent); color:#1a1812;
-    border:0; border-radius:8px; padding:14px; font-size:15px; font-weight:600;
-    font-family:"IBM Plex Mono",monospace; letter-spacing:.02em; cursor:pointer;
-    transition:opacity .15s, transform .05s;
+  input[type=email]:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(200,168,75,.15);}
+  input[type=email]:disabled{opacity:.6;}
+  button.primary{
+    width:100%; margin-top:12px; background:var(--accent); color:#1a1812;
+    border:0; border-radius:8px; padding:14px; font-size:14px; font-weight:600;
+    font-family:"IBM Plex Mono",monospace; letter-spacing:.03em; cursor:pointer;
+    transition:opacity .12s, transform .05s;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
   }
-  button:hover{opacity:.92;} button:active{transform:translateY(1px);}
-  button:disabled{opacity:.5; cursor:default; transform:none;}
-  .msg{margin-top:16px; font-size:13.5px; line-height:1.5; border-radius:8px;
-    padding:12px 14px; display:none;}
-  .msg.show{display:block;}
-  .msg.err{background:rgba(200,75,75,.12); border:1px solid rgba(200,75,75,.4); color:#e9b6b6;}
-  .msg.ok{background:rgba(95,168,95,.1); border:1px solid rgba(95,168,95,.4); color:#bfe0bf;}
-  .foot{margin-top:22px; padding-top:18px; border-top:1px solid var(--line);
-    font-size:12.5px; color:var(--muted); line-height:1.5;}
+  button.primary:hover{opacity:.94;}
+  button.primary:active{transform:translateY(1px);}
+  button.primary:disabled{opacity:.55; cursor:default; transform:none;}
+  .resend{
+    display:block;margin:18px auto 0;background:transparent;border:0;
+    color:var(--muted);font:inherit;font-size:13px;cursor:pointer;
+    padding:6px 10px;border-radius:5px;transition:color .12s, background .12s;
+  }
+  .resend:hover{color:var(--text);background:rgba(255,255,255,.04);}
+  .err-msg{margin-top:14px; font-size:13.5px; line-height:1.5; border-radius:7px;
+    padding:11px 13px; display:none;
+    background:rgba(200,75,75,.12); border:1px solid rgba(200,75,75,.4); color:#e9b6b6;}
+  .err-msg.show{display:block;}
+  .foot{margin-top:24px; padding-top:18px; border-top:1px solid var(--line);
+    font-size:12.5px; color:var(--muted); line-height:1.5; text-align:center;}
   .foot a{color:var(--accent); text-decoration:none;}
   .foot a:hover{text-decoration:underline;}
-  .back{display:inline-block; margin-top:14px; color:var(--muted); font-size:13px;
-    text-decoration:none;}
-  .back:hover{color:var(--text);}
-  .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(26,24,18,.35);
-    border-top-color:#1a1812;border-radius:50%;animation:sp .6s linear infinite;
-    vertical-align:-2px;margin-right:8px;}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(26,24,18,.3);
+    border-top-color:#1a1812;border-radius:50%;animation:sp .6s linear infinite;}
   @keyframes sp{to{transform:rotate(360deg);}}
   .setup-warn{margin-top:16px;background:rgba(200,168,75,.1);border:1px solid var(--accent-dim);
     color:#e7d49b;border-radius:8px;padding:12px 14px;font-size:12.5px;line-height:1.5;
@@ -94,25 +110,41 @@
       </svg>
       CNC Calculator
     </div>
-    <h1>Sign in to Ask the&nbsp;Machinist</h1>
-    <p class="sub">Enter your email and we'll send you a one-time sign-in link &mdash; no password needed.</p>
 
-    <form id="form" autocomplete="on" novalidate>
-      <label for="email">Email address</label>
-      <input id="email" type="email" inputmode="email" autocomplete="email"
-             placeholder="you@shop.com" required>
-      <button id="submit" type="submit">Send sign-in link</button>
-    </form>
+    <!-- ── Sign-in form state ── -->
+    <section id="state-form">
+      <div class="icon-circle" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>
+      </div>
+      <h1>Sign in to continue</h1>
+      <p class="sub">Enter your email and we'll send a one-time sign-in link. No password needed &mdash; new accounts are created automatically.</p>
 
-    <div id="msg" class="msg" role="status" aria-live="polite"></div>
+      <form id="form" autocomplete="on" novalidate>
+        <input id="email" type="email" inputmode="email" autocomplete="email"
+               placeholder="you@shop.com" required>
+        <button class="primary" id="submit" type="submit">Send sign-in link</button>
+      </form>
+      <div id="msg" class="err-msg" role="status" aria-live="polite"></div>
+    </section>
+
+    <!-- ── Success state (swapped in after link sent) ── -->
+    <section id="state-sent" hidden>
+      <div class="icon-circle ok" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19 7.5"></path></svg>
+      </div>
+      <h1>Check your inbox</h1>
+      <p class="sub">Sign-in link sent to <b id="sent-email"></b>.<br>
+        Open it <b>on this device</b> &mdash; you'll come back here already signed in.</p>
+      <button class="resend" type="button" id="resend">Use a different email</button>
+    </section>
+
     <div id="setupWarn" class="setup-warn">
       Sign-in isn't configured yet. Paste your Supabase <b>Project URL</b> and
       <b>anon key</b> into the CONFIG block at the top of <code>signin.html</code>.
     </div>
 
     <div class="foot">
-      A subscription unlocks the AI machining assistant. The calculator itself is free.
-      <br><a class="back" href="./">&larr; Back to the calculator</a>
+      <a href="./">&larr; Back to the calculator</a>
     </div>
   </main>
 
@@ -131,11 +163,15 @@
     var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZGt5bm1mdmt2d2FoeGl3YnZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDkwMzgsImV4cCI6MjA5NTU4NTAzOH0.6HRYpTYhS_7ne8TgsVDcaYSNOlVV712DSil5Pp4szKw';
     /* ====================================================================== */
 
-    var form    = document.getElementById('form');
-    var emailEl = document.getElementById('email');
-    var btn     = document.getElementById('submit');
-    var msg     = document.getElementById('msg');
+    var form      = document.getElementById('form');
+    var emailEl   = document.getElementById('email');
+    var btn       = document.getElementById('submit');
+    var msg       = document.getElementById('msg');
     var setupWarn = document.getElementById('setupWarn');
+    var stateForm = document.getElementById('state-form');
+    var stateSent = document.getElementById('state-sent');
+    var sentEmail = document.getElementById('sent-email');
+    var resendBtn = document.getElementById('resend');
 
     var configured = SUPABASE_URL.indexOf('http') === 0 &&
                      SUPABASE_ANON_KEY.length > 20 &&
@@ -151,24 +187,28 @@
       btn.disabled = true;
     }
 
-    function show(kind, text){
-      msg.className = 'msg show ' + kind;
-      msg.innerHTML = text;
+    function showErr(text){
+      msg.className = 'err-msg show';
+      msg.textContent = text;
+    }
+    function clearErr(){ msg.className = 'err-msg'; msg.textContent = ''; }
+    function resetForm(){
+      stateSent.hidden = true; stateForm.hidden = false;
+      btn.disabled = false; btn.textContent = 'Send sign-in link';
+      emailEl.disabled = false;
+      clearErr();
+      setTimeout(function(){ try { emailEl.focus(); } catch(e){} }, 50);
     }
 
     /* Where the magic link returns the user: the app root (index.html),
        same directory as this page. Supabase appends the auth tokens to the
        URL; the main app captures + persists the session on load. */
-    function appRootUrl(){
-      return new URL('.', location.href).href;
-    }
+    function appRootUrl(){ return new URL('.', location.href).href; }
 
     /* If the user is already signed in, bounce straight to the app. */
     if (sb) {
       sb.auth.getSession().then(function(res){
-        if (res && res.data && res.data.session) {
-          location.replace(appRootUrl());
-        }
+        if (res && res.data && res.data.session) location.replace(appRootUrl());
       }).catch(function(){});
     }
 
@@ -176,11 +216,11 @@
       e.preventDefault();
       if (!sb) { setupWarn.classList.add('show'); return; }
       var email = (emailEl.value || '').trim();
-      if (!email || email.indexOf('@') < 1) { show('err', 'Please enter a valid email address.'); return; }
+      if (!email || email.indexOf('@') < 1) { showErr('Please enter a valid email address.'); return; }
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spin"></span>Sending&hellip;';
-      msg.className = 'msg';
+      clearErr();
 
       try {
         var out = await sb.auth.signInWithOtp({
@@ -188,20 +228,18 @@
           options: { emailRedirectTo: appRootUrl(), shouldCreateUser: true }
         });
         if (out.error) throw out.error;
-        show('ok',
-          'Check your inbox &mdash; we sent a sign-in link to <b>' +
-          email.replace(/[<>&]/g,'') + '</b>.<br>' +
-          'Open it <b>on this device</b> to finish signing in. ' +
-          'The link expires in about an hour.');
-        btn.textContent = 'Link sent';
-        emailEl.disabled = true;
+        /* Swap to success state */
+        sentEmail.textContent = email;
+        stateForm.hidden = true;
+        stateSent.hidden  = false;
       } catch (err) {
-        show('err', 'Could not send the link: ' +
-          String(err && err.message || err).replace(/[<>]/g,''));
+        showErr('Could not send the link: ' + String(err && err.message || err));
         btn.disabled = false;
         btn.textContent = 'Send sign-in link';
       }
     });
+
+    if (resendBtn) resendBtn.addEventListener('click', resetForm);
   })();
   </script>
 </body>
