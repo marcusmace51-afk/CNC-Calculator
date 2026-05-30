@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f0d">
+<title>Sign in · CNC Calculator</title>
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="manifest" href="./manifest.json">
+<style>
+  @font-face{font-family:"IBM Plex Sans";font-weight:300;font-display:swap;
+    src:url("./fonts/ibm-plex-sans-300.woff2") format("woff2");}
+  @font-face{font-family:"IBM Plex Sans";font-weight:400;font-display:swap;
+    src:url("./fonts/ibm-plex-sans-400.woff2") format("woff2");}
+  @font-face{font-family:"IBM Plex Sans";font-weight:500;font-display:swap;
+    src:url("./fonts/ibm-plex-sans-500.woff2") format("woff2");}
+  @font-face{font-family:"IBM Plex Mono";font-weight:400;font-display:swap;
+    src:url("./fonts/ibm-plex-mono-400.woff2") format("woff2");}
+  @font-face{font-family:"IBM Plex Mono";font-weight:600;font-display:swap;
+    src:url("./fonts/ibm-plex-mono-600.woff2") format("woff2");}
+
+  :root{
+    --bg:#0f0f0d; --panel:#171714; --panel2:#1f1f1c; --line:#33312b;
+    --text:#e2ddd4; --muted:#9b958a; --accent:#c8a84b; --accent-dim:#8f7733;
+    --err:#c84b4b; --ok:#5fa85f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:"IBM Plex Sans",system-ui,sans-serif; font-weight:400;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px calc(24px + env(safe-area-inset-right,0)) calc(24px + env(safe-area-inset-bottom,0)) calc(24px + env(safe-area-inset-left,0));
+    min-height:100%;
+  }
+  .card{
+    width:100%; max-width:380px; background:var(--panel);
+    border:1px solid var(--line); border-radius:12px;
+    padding:28px 26px 24px; box-shadow:0 12px 40px rgba(0,0,0,.45);
+  }
+  .brand{
+    font-family:"IBM Plex Mono",monospace; font-weight:600; letter-spacing:.04em;
+    color:var(--accent); font-size:13px; text-transform:uppercase; margin-bottom:18px;
+    display:flex; align-items:center; gap:9px;
+  }
+  .brand svg{width:20px;height:20px;flex:0 0 auto;}
+  h1{font-size:21px; font-weight:500; margin:0 0 6px; line-height:1.25;}
+  .sub{color:var(--muted); font-size:14px; margin:0 0 22px; line-height:1.45;}
+  label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px;
+    text-transform:uppercase; letter-spacing:.05em; font-family:"IBM Plex Mono",monospace;}
+  input[type=email]{
+    width:100%; background:var(--panel2); border:1px solid var(--line);
+    color:var(--text); border-radius:8px; padding:13px 14px; font-size:16px;
+    font-family:inherit; outline:none; transition:border-color .15s;
+  }
+  input[type=email]:focus{border-color:var(--accent-dim);}
+  button{
+    width:100%; margin-top:16px; background:var(--accent); color:#1a1812;
+    border:0; border-radius:8px; padding:14px; font-size:15px; font-weight:600;
+    font-family:"IBM Plex Mono",monospace; letter-spacing:.02em; cursor:pointer;
+    transition:opacity .15s, transform .05s;
+  }
+  button:hover{opacity:.92;} button:active{transform:translateY(1px);}
+  button:disabled{opacity:.5; cursor:default; transform:none;}
+  .msg{margin-top:16px; font-size:13.5px; line-height:1.5; border-radius:8px;
+    padding:12px 14px; display:none;}
+  .msg.show{display:block;}
+  .msg.err{background:rgba(200,75,75,.12); border:1px solid rgba(200,75,75,.4); color:#e9b6b6;}
+  .msg.ok{background:rgba(95,168,95,.1); border:1px solid rgba(95,168,95,.4); color:#bfe0bf;}
+  .foot{margin-top:22px; padding-top:18px; border-top:1px solid var(--line);
+    font-size:12.5px; color:var(--muted); line-height:1.5;}
+  .foot a{color:var(--accent); text-decoration:none;}
+  .foot a:hover{text-decoration:underline;}
+  .back{display:inline-block; margin-top:14px; color:var(--muted); font-size:13px;
+    text-decoration:none;}
+  .back:hover{color:var(--text);}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(26,24,18,.35);
+    border-top-color:#1a1812;border-radius:50%;animation:sp .6s linear infinite;
+    vertical-align:-2px;margin-right:8px;}
+  @keyframes sp{to{transform:rotate(360deg);}}
+  .setup-warn{margin-top:16px;background:rgba(200,168,75,.1);border:1px solid var(--accent-dim);
+    color:#e7d49b;border-radius:8px;padding:12px 14px;font-size:12.5px;line-height:1.5;
+    font-family:"IBM Plex Mono",monospace;display:none;}
+  .setup-warn.show{display:block;}
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"></path>
+      </svg>
+      CNC Calculator
+    </div>
+    <h1>Sign in to Ask the&nbsp;Machinist</h1>
+    <p class="sub">Enter your email and we'll send you a one-time sign-in link &mdash; no password needed.</p>
+
+    <form id="form" autocomplete="on" novalidate>
+      <label for="email">Email address</label>
+      <input id="email" type="email" inputmode="email" autocomplete="email"
+             placeholder="you@shop.com" required>
+      <button id="submit" type="submit">Send sign-in link</button>
+    </form>
+
+    <div id="msg" class="msg" role="status" aria-live="polite"></div>
+    <div id="setupWarn" class="setup-warn">
+      Sign-in isn't configured yet. Paste your Supabase <b>Project URL</b> and
+      <b>anon key</b> into the CONFIG block at the top of <code>signin.html</code>.
+    </div>
+
+    <div class="foot">
+      A subscription unlocks the AI machining assistant. The calculator itself is free.
+      <br><a class="back" href="./">&larr; Back to the calculator</a>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+  (function(){
+    'use strict';
+    /* ======================================================================
+       CONFIG — paste your two Supabase values here (both are PUBLIC/safe to
+       ship in the frontend). Find them in the Supabase dashboard under
+       Project Settings -> API:
+         - Project URL          (e.g. https://abcdefgh.supabase.co)
+         - anon / public key    (the long "anon" JWT, NOT the service_role key)
+       ====================================================================== */
+    var SUPABASE_URL      = 'https://eodkynmfvkvwahxiwbvp.supabase.co';
+    var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZGt5bm1mdmt2d2FoeGl3YnZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDkwMzgsImV4cCI6MjA5NTU4NTAzOH0.6HRYpTYhS_7ne8TgsVDcaYSNOlVV712DSil5Pp4szKw';
+    /* ====================================================================== */
+
+    var form    = document.getElementById('form');
+    var emailEl = document.getElementById('email');
+    var btn     = document.getElementById('submit');
+    var msg     = document.getElementById('msg');
+    var setupWarn = document.getElementById('setupWarn');
+
+    var configured = SUPABASE_URL.indexOf('http') === 0 &&
+                     SUPABASE_ANON_KEY.length > 20 &&
+                     SUPABASE_URL.indexOf('__SUPA') === -1;
+
+    var sb = null;
+    if (configured && window.supabase) {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: true, detectSessionInUrl: true, autoRefreshToken: true }
+      });
+    } else {
+      setupWarn.classList.add('show');
+      btn.disabled = true;
+    }
+
+    function show(kind, text){
+      msg.className = 'msg show ' + kind;
+      msg.innerHTML = text;
+    }
+
+    /* Where the magic link returns the user: the app root (index.html),
+       same directory as this page. Supabase appends the auth tokens to the
+       URL; the main app captures + persists the session on load. */
+    function appRootUrl(){
+      return new URL('.', location.href).href;
+    }
+
+    /* If the user is already signed in, bounce straight to the app. */
+    if (sb) {
+      sb.auth.getSession().then(function(res){
+        if (res && res.data && res.data.session) {
+          location.replace(appRootUrl());
+        }
+      }).catch(function(){});
+    }
+
+    form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      if (!sb) { setupWarn.classList.add('show'); return; }
+      var email = (emailEl.value || '').trim();
+      if (!email || email.indexOf('@') < 1) { show('err', 'Please enter a valid email address.'); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span>Sending&hellip;';
+      msg.className = 'msg';
+
+      try {
+        var out = await sb.auth.signInWithOtp({
+          email: email,
+          options: { emailRedirectTo: appRootUrl(), shouldCreateUser: true }
+        });
+        if (out.error) throw out.error;
+        show('ok',
+          'Check your inbox &mdash; we sent a sign-in link to <b>' +
+          email.replace(/[<>&]/g,'') + '</b>.<br>' +
+          'Open it <b>on this device</b> to finish signing in. ' +
+          'The link expires in about an hour.');
+        btn.textContent = 'Link sent';
+        emailEl.disabled = true;
+      } catch (err) {
+        show('err', 'Could not send the link: ' +
+          String(err && err.message || err).replace(/[<>]/g,''));
+        btn.disabled = false;
+        btn.textContent = 'Send sign-in link';
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

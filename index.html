@@ -14695,6 +14695,76 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       color: var(--muted, #9b9690); font-size: 22px; line-height: 1;
       cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
+    #ai-drawer .ai-acct {
+      flex-shrink: 0; padding: 7px 16px;
+      border-bottom: 1px solid var(--border, #2e2e2a);
+      font-family: var(--mono, ui-monospace, monospace); font-size: 11px;
+      color: var(--muted, #9b9690);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    #ai-drawer .ai-acct[hidden] { display: none; }
+    #ai-drawer .ai-acct .ai-acct-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #ai-drawer .ai-acct a {
+      color: var(--accent, #c8a84b); text-decoration: none; cursor: pointer;
+      flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    }
+    #ai-drawer .ai-acct a:hover { text-decoration: underline; }
+
+    /* Inline magic-link sign-in card, shown inside the chat drawer when the
+       user isn't signed in. Keeps the entire flow in-app. */
+    #ai-drawer .ai-signin {
+      padding: 6px 2px;
+      font-family: var(--sans, system-ui, sans-serif);
+    }
+    #ai-drawer .ai-signin-title {
+      font-family: var(--mono, ui-monospace, monospace);
+      font-size: 13px; font-weight: 600;
+      color: var(--accent, #c8a84b);
+      letter-spacing: .04em;
+      margin: 2px 0 8px;
+    }
+    #ai-drawer .ai-signin-sub {
+      color: var(--muted, #9b9690);
+      font-size: 13.5px; line-height: 1.5;
+      margin: 0 0 14px;
+    }
+    #ai-drawer .ai-signin-form { display: flex; flex-direction: column; gap: 8px; }
+    #ai-drawer .ai-signin-form input[type=email] {
+      background: var(--panel2, #1f1f1c);
+      border: 1px solid var(--border, #2e2e2a);
+      color: var(--text, #e2ddd4);
+      border-radius: 6px; padding: 12px 13px;
+      font: inherit; font-size: 15px; outline: none;
+      transition: border-color .12s;
+    }
+    #ai-drawer .ai-signin-form input[type=email]:focus {
+      border-color: var(--accent-dim, #8f7733);
+    }
+    #ai-drawer .ai-signin-form input[type=email]:disabled { opacity: .6; }
+    #ai-drawer .ai-signin-form button {
+      background: var(--accent, #c8a84b); color: #1a1812;
+      border: 0; border-radius: 6px; padding: 12px;
+      font-family: var(--mono, ui-monospace, monospace);
+      font-size: 13px; font-weight: 600; letter-spacing: .02em;
+      cursor: pointer; transition: opacity .12s;
+    }
+    #ai-drawer .ai-signin-form button:hover { opacity: .92; }
+    #ai-drawer .ai-signin-form button:disabled { opacity: .5; cursor: default; }
+    #ai-drawer .ai-signin-msg {
+      margin-top: 10px; font-size: 12.5px; line-height: 1.45;
+      padding: 9px 11px; border-radius: 6px; display: none;
+    }
+    #ai-drawer .ai-signin-msg.show { display: block; }
+    #ai-drawer .ai-signin-msg.err {
+      background: rgba(200, 75, 75, .12);
+      border: 1px solid rgba(200, 75, 75, .4);
+      color: #e9b6b6;
+    }
+    #ai-drawer .ai-signin-msg.ok {
+      background: rgba(95, 168, 95, .1);
+      border: 1px solid rgba(95, 168, 95, .4);
+      color: #bfe0bf;
+    }
 
     #ai-drawer .ai-messages {
       flex: 1 1 auto;
@@ -14894,6 +14964,7 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         <button class="ai-close" aria-label="Close" id="ai-close-btn">×</button>
       </div>
     </div>
+    <div class="ai-acct" id="ai-acct" hidden></div>
     <div class="ai-messages" id="ai-messages" aria-live="polite" aria-atomic="false">
       <div class="ai-empty">
         Domain-trained AI for speeds and feeds troubleshooting.<br>
@@ -14910,6 +14981,121 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       AI suggestions are advisory only. Verify with your machine and toolmaker before running production.
     </div>
   </div>
+
+  <script>
+    /* ========================================================================
+       CNCAuth — Supabase magic-link auth for the AI chat.
+       Loads supabase-js lazily (non-blocking, so the offline calculator is
+       never affected). Captures the session from the magic-link redirect hash,
+       persists it, and exposes a tiny async API used by the chat. Both config
+       values below are PUBLIC (safe to ship): the anon key is designed for
+       frontend use.
+       ======================================================================== */
+    window.CNCAuth = (function () {
+      'use strict';
+      var SUPABASE_URL      = 'https://eodkynmfvkvwahxiwbvp.supabase.co';
+      var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZGt5bm1mdmt2d2FoeGl3YnZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDkwMzgsImV4cCI6MjA5NTU4NTAzOH0.6HRYpTYhS_7ne8TgsVDcaYSNOlVV712DSil5Pp4szKw';
+      var SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+
+      var client = null;
+      var listeners = [];
+      var lastEmail = null;
+
+      function notify() {
+        for (var i = 0; i < listeners.length; i++) {
+          try { listeners[i](lastEmail); } catch (e) {}
+        }
+      }
+
+      function loadSdk() {
+        return new Promise(function (resolve, reject) {
+          if (window.supabase && window.supabase.createClient) return resolve(window.supabase);
+          var s = document.createElement('script');
+          s.src = SDK_URL;
+          s.async = true;
+          s.onload = function () {
+            if (window.supabase && window.supabase.createClient) resolve(window.supabase);
+            else reject(new Error('supabase-js failed to initialize'));
+          };
+          s.onerror = function () { reject(new Error('supabase-js failed to load (offline?)')); };
+          document.head.appendChild(s);
+        });
+      }
+
+      /* Resolves to the Supabase client, or null if it can't load (e.g. offline).
+         Created once; reused thereafter. */
+      var readyPromise = null;
+      function ready() {
+        if (readyPromise) return readyPromise;
+        readyPromise = loadSdk().then(function (sb) {
+          client = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: { persistSession: true, detectSessionInUrl: true, autoRefreshToken: true }
+          });
+          /* Magic-link redirect lands here with tokens in the URL hash;
+             detectSessionInUrl captures + persists them, then we tidy the URL. */
+          return client.auth.getSession().then(function (res) {
+            var sess = res && res.data ? res.data.session : null;
+            lastEmail = sess && sess.user ? sess.user.email : null;
+            if (location.hash && location.hash.indexOf('access_token') !== -1) {
+              try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+            }
+            client.auth.onAuthStateChange(function (_evt, session) {
+              lastEmail = session && session.user ? session.user.email : null;
+              notify();
+            });
+            notify();
+            return client;
+          });
+        }).catch(function (err) {
+          /* Offline / blocked: stay unauthenticated but don't break the app. */
+          readyPromise = null; /* allow a later retry once back online */
+          return null;
+        });
+        return readyPromise;
+      }
+
+      return {
+        SIGNIN_URL: './signin.html',
+        ready: ready,
+        /* email of the signed-in user, or null. Synchronous best-effort. */
+        email: function () { return lastEmail; },
+        isSignedIn: function () { return !!lastEmail; },
+        /* current access token (JWT) or null — awaits client + refreshes if needed */
+        getToken: async function () {
+          var sb = await ready();
+          if (!sb) return null;
+          var res = await sb.auth.getSession();
+          var sess = res && res.data ? res.data.session : null;
+          return sess ? sess.access_token : null;
+        },
+        signOut: async function () {
+          var sb = await ready();
+          if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
+          lastEmail = null; notify();
+        },
+        /* Send a magic-link email. Resolves on success, throws on failure.
+           The link's redirect target is the current app URL so the user lands
+           back in the calculator already signed in. */
+        sendMagicLink: async function (email) {
+          var sb = await ready();
+          if (!sb) throw new Error('Auth unavailable (offline?)');
+          var redirect = location.origin + location.pathname;
+          var out = await sb.auth.signInWithOtp({
+            email: email,
+            options: { emailRedirectTo: redirect, shouldCreateUser: true }
+          });
+          if (out && out.error) throw out.error;
+          return true;
+        },
+        onChange: function (cb) {
+          listeners.push(cb);
+          try { cb(lastEmail); } catch (e) {}
+        }
+      };
+    })();
+    /* Kick off auth init in the background (won't block the calculator). */
+    try { window.CNCAuth.ready(); } catch (e) {}
+  </script>
 
   <script>
     (function aiChat() {
@@ -14930,6 +15116,106 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       var inputEl   = document.getElementById('ai-input');
       var sendBtn   = document.getElementById('ai-send');
       var newBtn    = document.getElementById('ai-new-btn');
+      var acctEl    = document.getElementById('ai-acct');
+
+      /* When true, chat requires a signed-in user (Phase 1B). The calculator
+         itself is always free; only the AI is gated. */
+      var AUTH_REQUIRED = true;
+      var auth = window.CNCAuth || null;
+
+      /* Render the account bar: who's signed in + a sign-out / sign-in link. */
+      function renderAcct(email) {
+        if (!acctEl) return;
+        if (email) {
+          acctEl.hidden = false;
+          acctEl.innerHTML =
+            '<span class="ai-acct-who">Signed in &middot; ' + escapeHTML(email) + '</span>' +
+            '<a id="ai-signout" role="button" tabindex="0">Sign out</a>';
+          var so = document.getElementById('ai-signout');
+          if (so) so.addEventListener('click', function () {
+            if (auth) auth.signOut();
+          });
+        } else if (AUTH_REQUIRED) {
+          acctEl.hidden = false;
+          acctEl.innerHTML =
+            '<span class="ai-acct-who">Not signed in</span>' +
+            '<a href="' + (auth ? auth.SIGNIN_URL : './signin.html') + '">Sign in</a>';
+        } else {
+          acctEl.hidden = true;
+        }
+      }
+      /* Restore the messages area to its initial empty state (suggestion chips)
+         OR to the inline sign-in form, depending on auth state. Called when
+         opening the drawer, starting a new chat, or after auth state changes. */
+      function restoreEmpty() {
+        if (AUTH_REQUIRED && !(auth && auth.isSignedIn())) {
+          showSignInForm();
+        } else {
+          messagesEl.innerHTML = EMPTY_HTML;
+          bindSuggestions();
+        }
+      }
+
+      /* Render the magic-link sign-in form INSIDE the chat drawer's messages
+         area, so the user never leaves the calculator to authenticate. */
+      function showSignInForm() {
+        messagesEl.innerHTML =
+          '<div class="ai-signin">' +
+            '<div class="ai-signin-title">Sign in to use the assistant</div>' +
+            '<div class="ai-signin-sub">The calculator is free — the AI ' +
+              'assistant requires a free account. We\'ll email you a one-time ' +
+              'sign-in link, no password needed.</div>' +
+            '<form class="ai-signin-form" id="ai-signin-form" autocomplete="on" novalidate>' +
+              '<input id="ai-signin-email" type="email" inputmode="email" ' +
+                'autocomplete="email" placeholder="you@shop.com" required>' +
+              '<button id="ai-signin-submit" type="submit">Send sign-in link</button>' +
+            '</form>' +
+            '<div id="ai-signin-msg" class="ai-signin-msg" role="status" aria-live="polite"></div>' +
+          '</div>';
+        var form    = document.getElementById('ai-signin-form');
+        var emailIn = document.getElementById('ai-signin-email');
+        var sub     = document.getElementById('ai-signin-submit');
+        var msg     = document.getElementById('ai-signin-msg');
+        function showMsg(kind, html) {
+          msg.className = 'ai-signin-msg show ' + kind;
+          msg.innerHTML = html;
+        }
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          var em = (emailIn.value || '').trim();
+          if (!em || em.indexOf('@') < 1) { showMsg('err', 'Please enter a valid email.'); return; }
+          if (!auth) { showMsg('err', 'Sign-in is unavailable right now (offline?).'); return; }
+          sub.disabled = true; sub.textContent = 'Sending…';
+          msg.className = 'ai-signin-msg';
+          try {
+            await auth.sendMagicLink(em);
+            showMsg('ok',
+              'Check your inbox — sign-in link sent to <b>' + escapeHTML(em) + '</b>.<br>' +
+              'Open it <b>on this device</b>. You\'ll come back here already signed in.');
+            sub.textContent = 'Link sent';
+            emailIn.disabled = true;
+          } catch (err) {
+            showMsg('err', 'Could not send the link: ' +
+              escapeHTML(String(err && err.message || err)));
+            sub.disabled = false;
+            sub.textContent = 'Send sign-in link';
+          }
+        });
+        /* Tiny delay so iOS keyboards don't pop up during the open animation */
+        setTimeout(function () { try { emailIn.focus({ preventScroll: true }); } catch (e) {} }, 320);
+      }
+
+      /* Auth state listener: render the account bar AND, if the user is on the
+         empty/sign-in screen, swap it to match the new state (signed in →
+         suggestions, signed out → sign-in form). */
+      function onAuthChange(email) {
+        renderAcct(email);
+        /* Only auto-swap when there's no active conversation; never wipe a
+           conversation the user already started. */
+        var hasConvo = !!messagesEl.querySelector('.ai-msg');
+        if (!hasConvo) restoreEmpty();
+      }
+      if (auth) { auth.onChange(onAuthChange); } else { renderAcct(null); }
 
       var history = []; /* [{role, content}] */
       var sending = false;
@@ -14957,8 +15243,7 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       function newChat() {
         if (sending && currentAbort) currentAbort.abort();
         history = [];
-        messagesEl.innerHTML = EMPTY_HTML;
-        bindSuggestions();
+        restoreEmpty();
         inputEl.value = '';
         inputEl.style.height = 'auto';
         inputEl.focus();
@@ -14981,12 +15266,23 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
 
       function openDrawer() {
         drawer.hidden = false;
+        /* If signed-out and no conversation yet, swap the empty state to the
+           inline sign-in form before the drawer animates in. */
+        if (AUTH_REQUIRED && !(auth && auth.isSignedIn()) &&
+            !messagesEl.querySelector('.ai-msg') &&
+            !document.getElementById('ai-signin-form')) {
+          showSignInForm();
+        }
         /* allow display:flex to take effect before transition */
         requestAnimationFrame(function() {
           drawer.classList.add('open');
           backdrop.classList.add('open');
         });
-        setTimeout(function() { inputEl.focus(); syncViewport(); }, 280);
+        setTimeout(function() {
+          /* Don't steal focus from the sign-in email field if it's showing */
+          if (!document.getElementById('ai-signin-form')) inputEl.focus();
+          syncViewport();
+        }, 280);
       }
       function closeDrawer() {
         drawer.classList.remove('open');
@@ -15210,6 +15506,18 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       async function sendMessage() {
         var text = inputEl.value.trim();
         if (!text || sending) return;
+
+        /* Auth gate (Phase 1B): the AI requires a signed-in user.
+           If signed-out, swap to the inline sign-in form (no page navigation). */
+        var authToken = null;
+        if (AUTH_REQUIRED) {
+          try { authToken = auth ? await auth.getToken() : null; } catch (e) {}
+          if (!authToken) {
+            showSignInForm();
+            return;
+          }
+        }
+
         clearEmptyHint();
         addMessage('user', text);
         history.push({ role: 'user', content: text });
@@ -15224,12 +15532,22 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
 
         try {
           var snapshot = getCalcSnapshot();
+          var headers = { 'Content-Type': 'application/json' };
+          if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
           var resp = await fetch(CHAT_API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({ messages: history, snapshot: snapshot }),
             signal: currentAbort.signal
           });
+          if (resp.status === 401 || resp.status === 403) {
+            /* Session expired or rejected — sign the user out locally and
+               surface the inline sign-in form so they can re-authenticate
+               without leaving the calculator. */
+            if (auth) { try { await auth.signOut(); } catch (e) {} }
+            showSignInForm();
+            return;
+          }
           if (!resp.ok) {
             var errBody = await resp.text();
             throw new Error('HTTP ' + resp.status + ': ' + errBody.slice(0, 200));
