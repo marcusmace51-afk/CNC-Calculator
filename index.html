@@ -14829,17 +14829,66 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       border: 1px solid rgba(200, 75, 75, .4);
       color: #e9b6b6;
     }
+    #ai-drawer .ai-signin-msg.ok-msg {
+      background: rgba(95, 168, 95, .1);
+      border: 1px solid rgba(95, 168, 95, .4);
+      color: #bfe0bf;
+    }
     #ai-drawer .ai-signin-resend {
-      display: block; margin: 16px auto 0;
+      display: block; margin: 14px auto 0;
       background: transparent; border: 0;
       color: var(--muted, #9b9690); font: inherit; font-size: 12.5px;
       cursor: pointer; padding: 6px 10px; border-radius: 5px;
       -webkit-tap-highlight-color: transparent;
       transition: color .12s, background .12s;
     }
-    #ai-drawer .ai-signin-resend:hover {
+    #ai-drawer .ai-signin-resend:hover:not(:disabled) {
       color: var(--text, #e2ddd4);
       background: rgba(255, 255, 255, .04);
+    }
+    #ai-drawer .ai-signin-resend:disabled { cursor: default; opacity: .55; }
+
+    /* Continue-with-Google button — Google's brand recommends a white surface
+       with the multicolor G mark; we keep it that way for trust + recognition. */
+    #ai-drawer .ai-signin-google {
+      width: 100%; background: #fff; color: #1f1f1f;
+      border: 1px solid #dadce0; border-radius: 7px;
+      padding: 12px 14px;
+      font-family: var(--sans, system-ui, sans-serif);
+      font-size: 14px; font-weight: 500;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 11px;
+      transition: background .12s, box-shadow .12s, transform .05s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #ai-drawer .ai-signin-google:hover { background: #f6f7f9; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+    #ai-drawer .ai-signin-google:active { transform: translateY(1px); }
+    #ai-drawer .ai-signin-google:disabled { opacity: .65; cursor: default; transform: none; }
+    #ai-drawer .ai-signin-google svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* "or with email" divider between Google button and email form. */
+    #ai-drawer .ai-signin-divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 14px 0 14px;
+      color: var(--muted, #9b9690);
+      font-family: var(--mono, ui-monospace, monospace);
+      font-size: 10.5px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    #ai-drawer .ai-signin-divider::before,
+    #ai-drawer .ai-signin-divider::after {
+      content: ''; flex: 1 1 auto;
+      height: 1px; background: var(--border, #2e2e2a);
+    }
+
+    /* 6-digit OTP code input — monospace, wide letter-spacing, centered. */
+    #ai-drawer .ai-signin-form input.ai-otp-code {
+      text-align: center;
+      font-family: var(--mono, ui-monospace, monospace);
+      font-size: 22px; font-weight: 600;
+      letter-spacing: .35em;
+      padding: 13px 13px 13px 23px; /* offset for the right-shifted letter-spacing */
     }
 
     #ai-drawer .ai-messages {
@@ -15149,9 +15198,9 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
           if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
           lastEmail = null; notify();
         },
-        /* Send a magic-link email. Resolves on success, throws on failure.
-           The link's redirect target is the current app URL so the user lands
-           back in the calculator already signed in. */
+        /* Send a magic-link email. The same call also issues a 6-digit OTP
+           code (rendered in the email template via {{ .Token }}) so the user
+           can either click the link OR paste the code in-app. */
         sendMagicLink: async function (email) {
           var sb = await ready();
           if (!sb) throw new Error('Auth unavailable (offline?)');
@@ -15159,6 +15208,33 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
           var out = await sb.auth.signInWithOtp({
             email: email,
             options: { emailRedirectTo: redirect, shouldCreateUser: true }
+          });
+          if (out && out.error) throw out.error;
+          return true;
+        },
+        /* Verify a 6-digit OTP code from the magic-link email. On success the
+           session is set in supabase-js and onAuthStateChange fires, which
+           causes the rest of the app to react via onChange listeners. */
+        verifyOtpCode: async function (email, code) {
+          var sb = await ready();
+          if (!sb) throw new Error('Auth unavailable (offline?)');
+          var out = await sb.auth.verifyOtp({
+            email: email, token: String(code).trim(), type: 'email'
+          });
+          if (out && out.error) throw out.error;
+          return true;
+        },
+        /* One-tap Google sign-in. Supabase handles the OAuth dance by
+           redirecting to Google, then back to its own /auth/v1/callback,
+           then to our redirectTo (the app root) with the session in the URL
+           hash. detectSessionInUrl picks it up on return. */
+        signInWithGoogle: async function () {
+          var sb = await ready();
+          if (!sb) throw new Error('Auth unavailable (offline?)');
+          var redirect = location.origin + location.pathname;
+          var out = await sb.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: redirect }
           });
           if (out && out.error) throw out.error;
           return true;
@@ -15230,75 +15306,239 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         }
       }
 
-      /* SVG icons for sign-in card (envelope / checkmark). */
+      /* ─── Sign-in helpers + icons ──────────────────────────────────── */
       var ICON_MAIL  = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
         '<rect x="3" y="5" width="18" height="14" rx="2"></rect>' +
         '<path d="m3 7 9 6 9-6"></path></svg>';
       var ICON_CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
         '<path d="M5 12.5 10 17.5 19 7.5"></path></svg>';
+      /* Google "G" — official multicolor mark (Google Brand guidelines) */
+      var ICON_GOOGLE = '<svg viewBox="0 0 18 18" aria-hidden="true">' +
+        '<path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>' +
+        '<path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>' +
+        '<path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"/>' +
+        '<path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.892 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z"/>' +
+        '</svg>';
 
-      /* Render the magic-link sign-in form INSIDE the chat drawer's messages
-         area, so the user never leaves the calculator to authenticate. */
-      function showSignInForm() {
+      function isValidEmail(s) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || '').trim());
+      }
+      function getLastEmail() {
+        try { return localStorage.getItem('cnc-last-email') || ''; } catch (e) { return ''; }
+      }
+      function saveLastEmail(em) {
+        try { localStorage.setItem('cnc-last-email', em); } catch (e) {}
+      }
+      function friendlyError(err) {
+        var raw = String(err && err.message || err || '').trim();
+        if (/rate|too many|429/i.test(raw)) {
+          return 'Too many attempts. Please wait about a minute, then try again.';
+        }
+        if (/invalid.*otp|invalid.*token|expired/i.test(raw)) {
+          return 'That code is invalid or has expired. Tap Resend code for a new one.';
+        }
+        if (/network|fetch/i.test(raw)) {
+          return 'Network error. Check your connection and try again.';
+        }
+        return raw || 'Something went wrong. Please try again.';
+      }
+      function startCooldown(btn, baseLabel, seconds) {
+        var remaining = seconds;
+        btn.disabled = true;
+        btn.textContent = baseLabel + ' (' + remaining + 's)';
+        var t = setInterval(function () {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(t);
+            btn.disabled = false;
+            btn.textContent = baseLabel;
+          } else {
+            btn.textContent = baseLabel + ' (' + remaining + 's)';
+          }
+        }, 1000);
+      }
+
+      /* Render the in-app sign-in flow. Google one-tap on top, then an
+         "or with email" divider, then the magic-link email form. */
+      function showSignInForm(prefilledEmail) {
+        var seedEmail = prefilledEmail || getLastEmail() || '';
         messagesEl.innerHTML =
           '<div class="ai-signin" id="ai-signin-card">' +
             '<div class="ai-signin-icon">' + ICON_MAIL + '</div>' +
             '<div class="ai-signin-title">Sign in to continue</div>' +
-            '<div class="ai-signin-sub">The calculator is free. Ask the Machinist ' +
-              'needs a free account &mdash; enter your email and we\'ll send a ' +
-              'one-time sign-in link.</div>' +
+            '<div class="ai-signin-sub">Stays signed in on this device. ' +
+              'Free account &mdash; only the AI is gated, the calculator is free.</div>' +
+
+            '<button type="button" class="ai-signin-google" id="ai-signin-google">' +
+              ICON_GOOGLE + 'Continue with Google</button>' +
+
+            '<div class="ai-signin-divider"><span>or with email</span></div>' +
+
             '<form class="ai-signin-form" id="ai-signin-form" autocomplete="on" novalidate>' +
               '<input id="ai-signin-email" type="email" inputmode="email" ' +
-                'autocomplete="email" placeholder="you@shop.com" required>' +
+                'autocomplete="email" placeholder="you@shop.com" ' +
+                'value="' + escapeHTML(seedEmail) + '" required>' +
               '<button id="ai-signin-submit" type="submit">Send sign-in link</button>' +
             '</form>' +
+
             '<div id="ai-signin-msg" role="status" aria-live="polite"></div>' +
             '<div class="ai-signin-foot">No password. New here? Your account is created automatically.</div>' +
           '</div>';
-        var form    = document.getElementById('ai-signin-form');
-        var emailIn = document.getElementById('ai-signin-email');
-        var sub     = document.getElementById('ai-signin-submit');
-        var msg     = document.getElementById('ai-signin-msg');
+
+        var googleBtn = document.getElementById('ai-signin-google');
+        var form      = document.getElementById('ai-signin-form');
+        var emailIn   = document.getElementById('ai-signin-email');
+        var sub       = document.getElementById('ai-signin-submit');
+        var msg       = document.getElementById('ai-signin-msg');
 
         function showErr(html) {
           msg.className = 'ai-signin-msg err';
           msg.innerHTML = html;
         }
+        function clearMsg() { msg.className = ''; msg.innerHTML = ''; }
+
+        /* Disable Send until a real-looking email is typed */
+        function syncEnabled() { sub.disabled = !isValidEmail(emailIn.value); }
+        syncEnabled();
+        emailIn.addEventListener('input', syncEnabled);
+
+        googleBtn.addEventListener('click', async function () {
+          if (!auth) { showErr('Sign-in is unavailable right now (offline?).'); return; }
+          googleBtn.disabled = true;
+          googleBtn.innerHTML = '<span class="ai-spin"></span>Redirecting&hellip;';
+          clearMsg();
+          try {
+            await auth.signInWithGoogle();
+            /* Page will navigate to Google; nothing more to do here. */
+          } catch (err) {
+            showErr(escapeHTML(friendlyError(err)));
+            googleBtn.disabled = false;
+            googleBtn.innerHTML = ICON_GOOGLE + 'Continue with Google';
+          }
+        });
 
         form.addEventListener('submit', async function (e) {
           e.preventDefault();
           var em = (emailIn.value || '').trim();
-          if (!em || em.indexOf('@') < 1) { showErr('Please enter a valid email address.'); return; }
+          if (!isValidEmail(em)) { showErr('Please enter a valid email address.'); return; }
           if (!auth) { showErr('Sign-in is unavailable right now (offline?).'); return; }
           sub.disabled = true;
-          sub.innerHTML = '<span class="ai-spin" aria-hidden="true"></span>Sending&hellip;';
-          msg.className = ''; msg.innerHTML = '';
+          sub.innerHTML = '<span class="ai-spin"></span>Sending&hellip;';
+          clearMsg();
           try {
             await auth.sendMagicLink(em);
-            showSignInSuccess(em);
+            saveLastEmail(em);
+            showOtpForm(em);
           } catch (err) {
-            showErr('Could not send the link: ' +
-              escapeHTML(String(err && err.message || err)));
+            showErr(escapeHTML(friendlyError(err)));
             sub.disabled = false;
             sub.textContent = 'Send sign-in link';
           }
         });
-        /* Tiny delay so iOS keyboards don't pop up during the open animation */
-        setTimeout(function () { try { emailIn.focus({ preventScroll: true }); } catch (e) {} }, 320);
+
+        /* Focus: if email is prefilled, skip to the Send button so a returning
+           user can just tap Send; otherwise focus the email field. */
+        setTimeout(function () {
+          try {
+            if (seedEmail) sub.focus({ preventScroll: true });
+            else emailIn.focus({ preventScroll: true });
+          } catch (e) {}
+        }, 320);
       }
 
-      /* Swap the sign-in card to the "check your inbox" success state. */
-      function showSignInSuccess(email) {
+      /* After the email is sent: show the "Check your inbox" state with a
+         6-digit OTP code input so the user can paste the code from the email
+         instead of switching apps to click the link. Either path signs them in. */
+      function showOtpForm(email) {
         messagesEl.innerHTML =
           '<div class="ai-signin" id="ai-signin-card">' +
             '<div class="ai-signin-icon ok">' + ICON_CHECK + '</div>' +
             '<div class="ai-signin-title">Check your inbox</div>' +
             '<div class="ai-signin-sub">Sign-in link sent to <b>' + escapeHTML(email) + '</b>.<br>' +
-              'Open it <b>on this device</b> &mdash; you\'ll come back here already signed in.</div>' +
-            '<button class="ai-signin-resend" type="button" id="ai-signin-resend">Use a different email</button>' +
+              'Paste the 6-digit code from the email below, or open the link.</div>' +
+
+            '<form class="ai-signin-form" id="ai-otp-form" autocomplete="off" novalidate>' +
+              '<input class="ai-otp-code" id="ai-otp-code" type="text" ' +
+                'inputmode="numeric" pattern="[0-9]*" maxlength="6" ' +
+                'autocomplete="one-time-code" placeholder="123456" required>' +
+              '<button id="ai-otp-verify" type="submit" disabled>Verify code</button>' +
+            '</form>' +
+
+            '<div id="ai-otp-msg" role="status" aria-live="polite"></div>' +
+
+            '<button type="button" class="ai-signin-resend" id="ai-signin-resend">Resend code</button>' +
+            '<button type="button" class="ai-signin-resend" id="ai-signin-back">Use a different email</button>' +
           '</div>';
-        var r = document.getElementById('ai-signin-resend');
-        if (r) r.addEventListener('click', showSignInForm);
+
+        var form      = document.getElementById('ai-otp-form');
+        var codeIn    = document.getElementById('ai-otp-code');
+        var verifyBtn = document.getElementById('ai-otp-verify');
+        var msg       = document.getElementById('ai-otp-msg');
+        var resendBtn = document.getElementById('ai-signin-resend');
+        var backBtn   = document.getElementById('ai-signin-back');
+
+        function showErr(html) {
+          msg.className = 'ai-signin-msg err';
+          msg.innerHTML = html;
+        }
+        function clearMsg() { msg.className = ''; msg.innerHTML = ''; }
+
+        function cleanDigits(v) { return String(v || '').replace(/\D/g, '').slice(0, 6); }
+
+        /* Strip non-digits live, enable Verify once we have 6 digits, and
+           auto-submit when the user pastes a complete code. */
+        codeIn.addEventListener('input', function () {
+          var c = cleanDigits(codeIn.value);
+          if (codeIn.value !== c) codeIn.value = c;
+          verifyBtn.disabled = c.length !== 6;
+          if (c.length === 6) {
+            /* Tiny delay so the UI shows the filled state before submit */
+            setTimeout(function () { form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', {cancelable:true})); }, 60);
+          }
+        });
+
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          var code = cleanDigits(codeIn.value);
+          if (code.length !== 6) return;
+          if (!auth) { showErr('Sign-in is unavailable right now (offline?).'); return; }
+          verifyBtn.disabled = true;
+          verifyBtn.innerHTML = '<span class="ai-spin"></span>Verifying&hellip;';
+          clearMsg();
+          try {
+            await auth.verifyOtpCode(email, code);
+            /* Success: onAuthStateChange will fire and onAuthChange will swap
+               the chat into its signed-in empty state. Nothing else to do. */
+          } catch (err) {
+            showErr(escapeHTML(friendlyError(err)));
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = 'Verify code';
+            try { codeIn.focus({ preventScroll: true }); codeIn.select(); } catch (e2) {}
+          }
+        });
+
+        /* 30s cooldown before the first resend is allowed (prevents accidental
+           rate-limit hits from impatient double-taps). */
+        startCooldown(resendBtn, 'Resend code', 30);
+        resendBtn.addEventListener('click', async function () {
+          if (resendBtn.disabled) return;
+          var label = 'Resend code';
+          resendBtn.disabled = true;
+          resendBtn.innerHTML = '<span class="ai-spin"></span>Resending&hellip;';
+          clearMsg();
+          try {
+            await auth.sendMagicLink(email);
+            msg.className = 'ai-signin-msg ok-msg';
+            msg.innerHTML = 'A new sign-in code was sent.';
+          } catch (err) {
+            showErr(escapeHTML(friendlyError(err)));
+          }
+          startCooldown(resendBtn, label, 30);
+        });
+
+        backBtn.addEventListener('click', function () { showSignInForm(''); });
+
+        setTimeout(function () { try { codeIn.focus({ preventScroll: true }); } catch (e) {} }, 320);
       }
 
       /* Auth state listener: render the account bar AND, if the user is on the
