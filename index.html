@@ -14695,68 +14695,138 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       color: var(--muted, #9b9690); font-size: 22px; line-height: 1;
       cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
-    /* ─── Account bar (visible only when signed in) ──────────────────── */
+    /* ─── Account bar + dropdown menu (visible only when signed in) ───── */
     #ai-drawer .ai-acct {
       flex-shrink: 0;
-      padding: 9px 14px;
+      position: relative;
       border-bottom: 1px solid var(--border, #2e2e2a);
       background: rgba(255, 255, 255, .015);
       font-family: var(--sans, system-ui, sans-serif);
-      font-size: 13px;
-      color: var(--muted, #9b9690);
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
     #ai-drawer .ai-acct[hidden] { display: none; }
-    #ai-drawer .ai-acct-user {
+    #ai-drawer .ai-acct-trigger {
+      width: 100%;
       display: flex; align-items: center; gap: 10px;
-      min-width: 0; flex: 1 1 auto;
+      padding: 9px 14px;
+      background: transparent; border: 0; cursor: pointer;
+      font: inherit; text-align: left;
+      color: var(--muted, #9b9690);
+      -webkit-tap-highlight-color: transparent;
+      transition: background .12s;
     }
+    #ai-drawer .ai-acct-trigger:hover { background: rgba(255, 255, 255, .03); }
     #ai-drawer .ai-acct-avatar {
       width: 24px; height: 24px; border-radius: 50%;
       background: var(--accent, #c8a84b); color: #1a1812;
       display: inline-flex; align-items: center; justify-content: center;
       font-family: var(--mono, ui-monospace, monospace);
       font-weight: 600; font-size: 11px;
-      text-transform: uppercase; letter-spacing: 0;
+      text-transform: uppercase;
       flex-shrink: 0;
     }
     #ai-drawer .ai-acct-email {
       color: var(--text, #e2ddd4);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      min-width: 0; font-size: 13px;
+      min-width: 0; flex: 1 1 auto; font-size: 13px;
     }
-    #ai-drawer .ai-acct-signout {
-      background: transparent; border: 0;
+    #ai-drawer .ai-acct-caret {
+      flex-shrink: 0; color: var(--muted, #9b9690);
+      font-size: 10px; transition: transform .15s;
+    }
+    #ai-drawer .ai-acct.open .ai-acct-caret { transform: rotate(180deg); }
+
+    #ai-drawer .ai-acct-menu {
+      position: absolute; top: 100%; left: 8px; right: 8px;
+      margin-top: 4px;
+      background: var(--panel2, #1f1f1c);
+      border: 1px solid var(--border, #2e2e2a);
+      border-radius: 9px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .55);
+      z-index: 30; padding: 5px;
+    }
+    #ai-drawer .ai-acct-menu[hidden] { display: none; }
+    #ai-drawer .ai-acct-menu-head {
+      padding: 9px 11px 10px; font-size: 11.5px; line-height: 1.45;
       color: var(--muted, #9b9690);
-      font: inherit; font-size: 12px;
-      cursor: pointer; padding: 5px 10px; border-radius: 5px;
-      flex-shrink: 0; -webkit-tap-highlight-color: transparent;
-      transition: color .12s, background .12s;
     }
-    #ai-drawer .ai-acct-signout:hover {
-      color: var(--text, #e2ddd4);
-      background: rgba(255, 255, 255, .05);
+    #ai-drawer .ai-acct-menu-head b {
+      display: block; color: var(--text, #e2ddd4); font-weight: 600;
+      font-size: 13px; word-break: break-all; margin-top: 2px;
     }
+    #ai-drawer .ai-acct-menu-sep { height: 1px; background: var(--border, #2e2e2a); margin: 4px 2px; }
+    #ai-drawer .ai-acct-item {
+      width: 100%; text-align: left;
+      background: transparent; border: 0; cursor: pointer;
+      font: inherit; font-size: 13px; color: var(--text, #e2ddd4);
+      padding: 10px 11px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .12s;
+    }
+    #ai-drawer .ai-acct-item:hover:not(:disabled) { background: rgba(255, 255, 255, .05); }
+    #ai-drawer .ai-acct-item:disabled { color: var(--muted, #9b9690); cursor: default; }
+    #ai-drawer .ai-acct-item.danger { color: #e89b9b; }
+    #ai-drawer .ai-acct-item.danger:hover { background: rgba(200, 75, 75, .12); }
+    #ai-drawer .ai-acct-soon {
+      font-family: var(--mono, ui-monospace, monospace);
+      font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+      color: #1a1812; background: var(--accent, #c8a84b);
+      border-radius: 4px; padding: 2px 5px; font-weight: 600;
+    }
+    /* Sign-out confirmation row (replaces the menu items on confirm) */
+    #ai-drawer .ai-acct-confirm { padding: 9px 11px; }
+    #ai-drawer .ai-acct-confirm-q { font-size: 12.5px; color: var(--text, #e2ddd4); margin-bottom: 9px; }
+    #ai-drawer .ai-acct-confirm-btns { display: flex; gap: 8px; }
+    #ai-drawer .ai-acct-confirm-btns button {
+      flex: 1; padding: 9px; border-radius: 6px;
+      font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #ai-drawer .ai-acct-cancel {
+      background: transparent; color: var(--text, #e2ddd4);
+      border: 1px solid var(--border, #2e2e2a);
+    }
+    #ai-drawer .ai-acct-cancel:hover { background: rgba(255, 255, 255, .05); }
+    #ai-drawer .ai-acct-yes {
+      background: #b34a4a; color: #fff; border: 1px solid #b34a4a;
+    }
+    #ai-drawer .ai-acct-yes:hover { background: #c25252; }
+
     /* When signed-out, the chat input + disclaimer are irrelevant (the sign-in
        form occupies the panel). Hide them so the drawer is a single clean
        panel: account-bar-or-nothing + form. */
     #ai-drawer.signed-out .ai-inputbar,
     #ai-drawer.signed-out .ai-disclaimer { display: none; }
 
+    /* Welcome toast — brief greeting on fresh sign-in. */
+    #ai-drawer .ai-welcome {
+      position: absolute; top: 64px; left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: var(--accent, #c8a84b); color: #1a1812;
+      font-family: var(--mono, ui-monospace, monospace);
+      font-size: 12px; font-weight: 600; letter-spacing: .02em;
+      padding: 8px 16px; border-radius: 20px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, .45);
+      z-index: 40; opacity: 0;
+      transition: opacity .25s, transform .25s;
+      pointer-events: none; white-space: nowrap;
+    }
+    #ai-drawer .ai-welcome.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
     /* ─── Inline magic-link sign-in card ──────────────────────────────
        Renders inside the chat drawer when signed-out. Keeps the entire
        sign-in/sign-up flow in-app — never navigates away. */
     #ai-drawer .ai-signin {
-      padding: 18px 4px 8px;
+      padding: 4px 4px 8px;
       font-family: var(--sans, system-ui, sans-serif);
       max-width: 360px; margin: 0 auto;
     }
     #ai-drawer .ai-signin-icon {
-      width: 44px; height: 44px; border-radius: 50%;
+      width: 42px; height: 42px; border-radius: 50%;
       background: rgba(200, 168, 75, .12);
       border: 1px solid rgba(200, 168, 75, .35);
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 14px;
+      margin: 0 auto 11px;
       color: var(--accent, #c8a84b);
     }
     #ai-drawer .ai-signin-icon.ok {
@@ -14775,13 +14845,13 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       color: var(--text, #e2ddd4);
       letter-spacing: .07em; text-transform: uppercase;
       text-align: center;
-      margin: 0 0 8px;
+      margin: 0 0 6px;
     }
     #ai-drawer .ai-signin-sub {
       color: var(--muted, #9b9690);
-      font-size: 13.5px; line-height: 1.55;
+      font-size: 13.5px; line-height: 1.5;
       text-align: center;
-      margin: 0 0 18px;
+      margin: 0 0 16px;
       padding: 0 6px;
     }
     #ai-drawer .ai-signin-sub b { color: var(--text, #e2ddd4); font-weight: 600; }
@@ -15130,10 +15200,16 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       var client = null;
       var listeners = [];
       var lastEmail = null;
+      var lastEvent = 'INITIAL';
+      /* Captured synchronously, before supabase-js can strip the URL hash:
+         true when this page load is the return leg of an OAuth / magic-link
+         redirect (so the app can auto-open the chat). */
+      var cameFromRedirect = !!(window.location.hash &&
+                                window.location.hash.indexOf('access_token') !== -1);
 
       function notify() {
         for (var i = 0; i < listeners.length; i++) {
-          try { listeners[i](lastEmail); } catch (e) {}
+          try { listeners[i](lastEmail, lastEvent); } catch (e) {}
         }
       }
 
@@ -15169,8 +15245,9 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
             if (location.hash && location.hash.indexOf('access_token') !== -1) {
               try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
             }
-            client.auth.onAuthStateChange(function (_evt, session) {
+            client.auth.onAuthStateChange(function (evt, session) {
               lastEmail = session && session.user ? session.user.email : null;
+              lastEvent = evt || lastEvent;
               notify();
             });
             notify();
@@ -15246,8 +15323,11 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         },
         onChange: function (cb) {
           listeners.push(cb);
-          try { cb(lastEmail); } catch (e) {}
-        }
+          try { cb(lastEmail, lastEvent); } catch (e) {}
+        },
+        /* True when the current page load is the return from an OAuth /
+           magic-link redirect (used to auto-open the chat on arrival). */
+        cameFromRedirect: function () { return cameFromRedirect; }
       };
     })();
     /* Kick off auth init in the background (won't block the calculator). */
@@ -15280,24 +15360,102 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       var AUTH_REQUIRED = true;
       var auth = window.CNCAuth || null;
 
-      /* Render the account bar. Only visible when signed in — the empty-state
-         sign-in form is the primary CTA when signed out, so a redundant
+      /* Render the account bar + dropdown menu. Only visible when signed in —
+         the empty-state sign-in form is the CTA when signed out, so a
          "not signed in" bar would just add clutter. */
       function renderAcct(email) {
         if (!acctEl) return;
-        if (!email) { acctEl.hidden = true; acctEl.innerHTML = ''; return; }
+        if (!email) { acctEl.hidden = true; acctEl.classList.remove('open'); acctEl.innerHTML = ''; return; }
         var initial = escapeHTML((email.charAt(0) || '?').toUpperCase());
         var safeEmail = escapeHTML(email);
         acctEl.hidden = false;
+        acctEl.classList.remove('open');
         acctEl.innerHTML =
-          '<div class="ai-acct-user">' +
+          '<button class="ai-acct-trigger" id="ai-acct-trigger" type="button" ' +
+            'aria-haspopup="true" aria-expanded="false">' +
             '<span class="ai-acct-avatar" aria-hidden="true">' + initial + '</span>' +
             '<span class="ai-acct-email" title="' + safeEmail + '">' + safeEmail + '</span>' +
-          '</div>' +
-          '<button class="ai-acct-signout" id="ai-signout" type="button" ' +
-            'aria-label="Sign out of ' + safeEmail + '">Sign out</button>';
-        var so = document.getElementById('ai-signout');
-        if (so) so.addEventListener('click', function () { if (auth) auth.signOut(); });
+            '<span class="ai-acct-caret" aria-hidden="true">&#9662;</span>' +
+          '</button>' +
+          '<div class="ai-acct-menu" id="ai-acct-menu" role="menu" hidden>' +
+            '<div class="ai-acct-menu-head">Signed in as<b>' + safeEmail + '</b></div>' +
+            '<div class="ai-acct-menu-sep"></div>' +
+            '<button class="ai-acct-item" type="button" role="menuitem" disabled>' +
+              'Manage subscription <span class="ai-acct-soon">Soon</span></button>' +
+            '<div class="ai-acct-menu-sep"></div>' +
+            '<button class="ai-acct-item danger" id="ai-acct-signout" type="button" role="menuitem">Sign out</button>' +
+          '</div>';
+
+        var trigger = document.getElementById('ai-acct-trigger');
+        var menu    = document.getElementById('ai-acct-menu');
+        trigger.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var willOpen = menu.hidden;
+          menu.hidden = !willOpen;
+          acctEl.classList.toggle('open', willOpen);
+          trigger.setAttribute('aria-expanded', String(willOpen));
+        });
+
+        document.getElementById('ai-acct-signout')
+          .addEventListener('click', function (e) {
+            e.stopPropagation();
+            renderSignoutConfirm(menu);
+          });
+      }
+
+      /* Replace the menu contents with an inline sign-out confirmation (#4),
+         so a fat-finger tap doesn't immediately end the session. */
+      function renderSignoutConfirm(menu) {
+        menu.innerHTML =
+          '<div class="ai-acct-confirm">' +
+            '<div class="ai-acct-confirm-q">Sign out of this account?</div>' +
+            '<div class="ai-acct-confirm-btns">' +
+              '<button class="ai-acct-cancel" id="ai-acct-cancel" type="button">Cancel</button>' +
+              '<button class="ai-acct-yes" id="ai-acct-yes" type="button">Sign out</button>' +
+            '</div>' +
+          '</div>';
+        document.getElementById('ai-acct-cancel')
+          .addEventListener('click', function (e) {
+            e.stopPropagation(); closeAcctMenu();
+          });
+        document.getElementById('ai-acct-yes')
+          .addEventListener('click', function (e) {
+            e.stopPropagation();
+            closeAcctMenu();
+            if (auth) auth.signOut();
+          });
+      }
+
+      function closeAcctMenu() {
+        var menu = document.getElementById('ai-acct-menu');
+        if (menu) menu.hidden = true;
+        if (acctEl) acctEl.classList.remove('open');
+        var trig = document.getElementById('ai-acct-trigger');
+        if (trig) trig.setAttribute('aria-expanded', 'false');
+      }
+      /* Close the account menu on any outside click / Escape. */
+      document.addEventListener('click', function (e) {
+        if (!acctEl || acctEl.hidden) return;
+        if (!acctEl.contains(e.target)) closeAcctMenu();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeAcctMenu();
+      });
+
+      /* Brief greeting on a fresh sign-in (#2). Auto-dismisses. */
+      function showWelcome(email) {
+        var local = (String(email).split('@')[0] || '');
+        var name = local.split(/[._\-+]/)[0] || local;
+        name = name ? (name.charAt(0).toUpperCase() + name.slice(1)) : '';
+        var t = document.createElement('div');
+        t.className = 'ai-welcome';
+        t.textContent = name ? ('Welcome, ' + name + ' 👋') : 'You’re signed in 👋';
+        drawer.appendChild(t);
+        requestAnimationFrame(function () { t.classList.add('show'); });
+        setTimeout(function () {
+          t.classList.remove('show');
+          setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 300);
+        }, 3000);
       }
       /* Restore the messages area to match the current auth state — suggestion
          chips when signed in, sign-in form when signed out. Defensive: does
@@ -15561,11 +15719,23 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       /* Auth state listener: render the account bar, toggle the drawer's
          signed-out class (which hides the input bar + disclaimer via CSS),
          and reconcile the empty state with the new auth state. */
-      function onAuthChange(email) {
+      var welcomed = false;
+      function onAuthChange(email, event) {
         renderAcct(email);
         if (email) drawer.classList.remove('signed-out');
         else       drawer.classList.add('signed-out');
         restoreEmpty();
+
+        /* Fresh sign-in (not a restored session on page load): greet once,
+           and if we just returned from an OAuth/magic-link redirect, auto-open
+           the chat so the user lands right where they were headed. */
+        if (email && event === 'SIGNED_IN' && !welcomed) {
+          welcomed = true;
+          var fromRedirect = !!(auth && auth.cameFromRedirect && auth.cameFromRedirect());
+          if (fromRedirect && drawer.hidden) openDrawer();
+          /* Delay slightly so it lands after the drawer's open animation. */
+          setTimeout(function () { showWelcome(email); }, fromRedirect ? 360 : 0);
+        }
       }
       /* Assume signed-out at boot — onAuthChange will flip the class as
          soon as the session resolves. */
