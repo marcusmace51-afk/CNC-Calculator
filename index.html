@@ -14737,6 +14737,11 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
       color: var(--text, #e2ddd4);
       background: rgba(255, 255, 255, .05);
     }
+    /* When signed-out, the chat input + disclaimer are irrelevant (the sign-in
+       form occupies the panel). Hide them so the drawer is a single clean
+       panel: account-bar-or-nothing + form. */
+    #ai-drawer.signed-out .ai-inputbar,
+    #ai-drawer.signed-out .ai-disclaimer { display: none; }
 
     /* ─── Inline magic-link sign-in card ──────────────────────────────
        Renders inside the chat drawer when signed-out. Keeps the entire
@@ -15294,15 +15299,27 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         var so = document.getElementById('ai-signout');
         if (so) so.addEventListener('click', function () { if (auth) auth.signOut(); });
       }
-      /* Restore the messages area to its initial empty state (suggestion chips)
-         OR to the inline sign-in form, depending on auth state. Called when
-         opening the drawer, starting a new chat, or after auth state changes. */
+      /* Restore the messages area to match the current auth state — suggestion
+         chips when signed in, sign-in form when signed out. Defensive: does
+         nothing if the right thing is already rendered (so we don't yank a
+         half-typed email or wipe an OTP form mid-input). */
       function restoreEmpty() {
-        if (AUTH_REQUIRED && !(auth && auth.isSignedIn())) {
-          showSignInForm();
+        /* If there's a real conversation, leave it alone. */
+        if (messagesEl.querySelector('.ai-msg')) return;
+        var signedIn = !!(auth && auth.isSignedIn());
+        var hasForm  = !!document.getElementById('ai-signin-form') ||
+                       !!document.getElementById('ai-otp-form');
+        if (AUTH_REQUIRED && !signedIn) {
+          /* Want the form. If it's already showing, leave it (preserves any
+             half-typed email or in-progress OTP entry). */
+          if (!hasForm) showSignInForm();
         } else {
-          messagesEl.innerHTML = EMPTY_HTML;
-          bindSuggestions();
+          /* Want suggestions. Swap if the form is there or the empty markup
+             has been stripped. */
+          if (hasForm || !messagesEl.querySelector('.ai-empty')) {
+            messagesEl.innerHTML = EMPTY_HTML;
+            bindSuggestions();
+          }
         }
       }
 
@@ -15541,16 +15558,18 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
         setTimeout(function () { try { codeIn.focus({ preventScroll: true }); } catch (e) {} }, 320);
       }
 
-      /* Auth state listener: render the account bar AND, if the user is on the
-         empty/sign-in screen, swap it to match the new state (signed in →
-         suggestions, signed out → sign-in form). */
+      /* Auth state listener: render the account bar, toggle the drawer's
+         signed-out class (which hides the input bar + disclaimer via CSS),
+         and reconcile the empty state with the new auth state. */
       function onAuthChange(email) {
         renderAcct(email);
-        /* Only auto-swap when there's no active conversation; never wipe a
-           conversation the user already started. */
-        var hasConvo = !!messagesEl.querySelector('.ai-msg');
-        if (!hasConvo) restoreEmpty();
+        if (email) drawer.classList.remove('signed-out');
+        else       drawer.classList.add('signed-out');
+        restoreEmpty();
       }
+      /* Assume signed-out at boot — onAuthChange will flip the class as
+         soon as the session resolves. */
+      drawer.classList.add('signed-out');
       if (auth) { auth.onChange(onAuthChange); } else { renderAcct(null); }
 
       var history = []; /* [{role, content}] */
@@ -15602,21 +15621,21 @@ function runMillTests(verbose) { return MillTests.run(verbose); }
 
       function openDrawer() {
         drawer.hidden = false;
-        /* If signed-out and no conversation yet, swap the empty state to the
-           inline sign-in form before the drawer animates in. */
-        if (AUTH_REQUIRED && !(auth && auth.isSignedIn()) &&
-            !messagesEl.querySelector('.ai-msg') &&
-            !document.getElementById('ai-signin-form')) {
-          showSignInForm();
-        }
+        /* Reconcile the empty state with current auth before showing — this
+           catches the post-OAuth-redirect race where auth resolved AFTER the
+           form was first rendered. */
+        restoreEmpty();
         /* allow display:flex to take effect before transition */
         requestAnimationFrame(function() {
           drawer.classList.add('open');
           backdrop.classList.add('open');
         });
         setTimeout(function() {
-          /* Don't steal focus from the sign-in email field if it's showing */
-          if (!document.getElementById('ai-signin-form')) inputEl.focus();
+          /* Don't steal focus from the sign-in fields if the form is showing */
+          if (!document.getElementById('ai-signin-form') &&
+              !document.getElementById('ai-otp-form')) {
+            inputEl.focus();
+          }
           syncViewport();
         }, 280);
       }
